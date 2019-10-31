@@ -12,7 +12,7 @@ typedef struct buffer{
 	unsigned int memleft;
 } buffer;
 
-int radix_sort(relation *rel,int depth);
+//int radix_sort(relation *rel,int depth);
 /*typedef struct hl{
 	uint64_t cont[256];
 	int depth;

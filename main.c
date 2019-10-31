@@ -55,32 +55,36 @@ void deleteRelation(relation* rel) {	//this function must be moved to relation.c
 }
 
 void join(uint64_t payloadR, uint64_t payloadS, buffer *Buff){
+	uint64_t size;
+	int used, memleft; 
+
 	size = 2 * sizeof(uint64_t);
 	while(Buff->next != NULL) 
 		Buff = Buff->next;
-	if(tsize > Buff->memleft){
+	if(size > Buff->memleft){
 		Buff->next = malloc(sizeof(buffer));
 		Buff = Buff->next;
 		Buff->memory = malloc(BUFFSIZE);
 		Buff->memleft = BUFFSIZE;
 		Buff->next = NULL;
 	}
-	Buff->memleft -= tsize;
-	used = BUFFSIZE - memleft;
-	memcpy((Buff->memory) + used, &payloadR);
+	used = BUFFSIZE - Buff->memleft;
+	memcpy((Buff->memory) + used, &payloadR, sizeof(uint64_t));
 	used += sizeof(uint64_t);
-	memcpy((Buff->memory) + used, &payloadS);
+	memcpy((Buff->memory) + used, &payloadS, sizeof(uint64_t));
+	Buff->memleft -= size;
 }
 
-buffer merge(relation *relR, relation *relS){
-	buffer Buff;
+buffer *merge(relation *relR, relation *relS){
+	buffer *Buff;
 	tuple *tuR, *tuS;
 	uint64_t counterR = 0, counterS = 0,lengthR, lengthS;
 	int same = 0, memleft = BUFFSIZE;
 
-	Buff.memory = malloc(BUFFSIZE);
-	Buff.next = NULL;
-	Buff.memleft = BUFFSIZE;
+	Buff = malloc(sizeof(buffer));
+	Buff->memory = malloc(BUFFSIZE);
+	Buff->next = NULL;
+	Buff->memleft = BUFFSIZE;
 	lengthR = relR->num_tuples;
 	lengthS = relS->num_tuples;
 	tuR = relR->tuples;
@@ -101,7 +105,7 @@ buffer merge(relation *relR, relation *relS){
 		//now they are equal or there are no more tuples at realtion2
 		if(counterS == lengthS) break;
 		while((tuR->key == tuS->key) && (counterS < lengthS)){
-			join(tuR->payload, tuS->payload, &Buff);//
+			join(tuR->payload, tuS->payload, Buff);//
 			same++; //keeps track of the sames so the next tuple  of realtion1 if it has the same key wont miss them
 			tuS++;
 			counterS++;
@@ -116,7 +120,7 @@ buffer merge(relation *relR, relation *relS){
 		if(counterS == lengthS) break;
 		same = 0;
 	}
-	return *Buff;
+	return Buff;
 }
 
 /*result* SortMergeJoin(relation* relR, relation* relS) {
