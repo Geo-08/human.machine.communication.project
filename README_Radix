@@ -1,0 +1,9 @@
+make to compile
+first run ./ctest x, x being an integer.
+It will create a file named "test_case" with x tuples, in a format of key,payload. The keys will be randomized while payload will be numbers from 0....x
+then run ./testrade x, it will read x tuples from the "test_case" file and put them in a relation.
+It will then check if the relation is sorted in respect to the key, the expected result is that they won't be sorted.
+Then it will call the function radix_sort(relation *rel,int depth) to sort the relation.
+The result relation will be checked to see if it's sorted, the expected result is that it will be sorted.
+And it will be printed on a file named "test_case_sorted"
+
