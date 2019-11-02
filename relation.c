@@ -23,7 +23,6 @@ int sort(relation *rel){
 }
 
 int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call it with depth argument value 0, rel will point at a sorted relation at the end.
-	printf("hi\n");
 	uint64_t hist[256];
 	create_hist(rel,hist,depth);
 	uint64_t psum[256]; 
@@ -49,7 +48,6 @@ int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call i
 			}	
 		}
 	}
-	printf("all clear\n");
 	return 0;
 }
 

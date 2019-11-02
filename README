@@ -1,0 +1,51 @@
+The following is an explanation of the functions that were used to implement radix sort and generally the sorting part of the project.
+The structs we will be working with are tuple which are comprised by 2 unsigned 64 bit integers and relation which are an array of tuples and an unsigned 64 bit integer holding the number of tuples in the array.
+
+int sort(relation *rel)
+sort sorts the relation that is pointed by rel and by the end it points to a sorted relation.
+if the relation to begin with is a shorter than 64KB it simply uses quicksort to sort it out.
+Otherwise it creates a new empty relation relation rel2 and calls int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start)
+which at the end rel2 points at a sorted version of rel and it's contents are coppied to rel.
+returns 0 on success.
+
+int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start)
+creates a histogram of rel (hist) and an aggregate histogram (psum). 8 bits from the key value of a tuple is used in the creation of the histogram and depth dictates which those 8 bits will be, starting from depth = 0 when it's called taking the 8 leftmost bits. start dictates what the first value will be for psum[0] during the creation of the aggregate histogram.
+using the histogram and aggregate histogram rel2 becomes a partially sorted version of rel.
+Then it runs through every "bucket" as recognized by the histogram and checks weather it's size is less than 64kb or if it has reached depth of 8 where all bits have been used using recursion to get smaller buckets and if either is true it uses quicksort to sort the "bucket" by copying the contents of the "bucket" in rel sorting it with quicksort and copying the result back to the right place in rel2.
+Otherwise the contents of the "bucket" will be copied again to rel and radix_sort will be called again with depth incremented by one and start taking the value of where the "bucket" starts in rel2.
+Eventually rel2 becomes sorted.
+returns 0 on success.
+
+
+int copy_relation (relation *to,uint64_t start,uint64_t size,relation *from)
+coppies 'size' number of tuples from relation 'from' to relation 'to' starting from to->tuples[start].
+returns 0 on success.
+
+quicksort, partition, swap are used for the implementation of quicksort. only notable aspect is that due to the nature of using unsigned integers,
+there has been a need to take care when q-1 and q+1 happens in case q is 0 or the maximum value that can be stored in a 64 bit unsigned integer. respectively.
+
+int isolate(relation *rel,uint64_t start,uint64_t size,relation *out)
+copies elements from rel at point of start and number of 'size' to 'out', meant to isolate a 'bucket' in order to be sorted.
+returns 0 on success.
+
+int create_hist (relation *rel,uint64_t* hist,int n)
+creates the histogram of rel, taking 8 bits from the key value of tuples, n dictating which 8 bits will be used.
+returns 0 on success.
+
+int create_psum (uint64_t *hist,uint64_t* psum,uint64_t start)
+creates the aggregate histogram, based on the histogram, psum[0] = start and the rest follow from there.
+returns 0 on success.
+
+void check_sorting(relation *rel,int length)
+checks if the 'length' first elements of a relation are sorted based on the key value of the tuple array.checks the whole relation if length is 0.
+prints related message.
+
+void print_relation(relation *rel, int length)
+prints 'length' first elements from relation rel on screen, all of them if length is 0.
+
+
+
+
+
+
+
