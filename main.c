@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include "relation.h"
+#define BUFFSIZE 1024*1024
 
 uint64_t** readArray(char* fileName, int* columns, int* rows, int *key) {
 	uint64_t** array ;
@@ -50,15 +51,83 @@ relation* createRelation(uint64_t** table, int size, int key) {	//this function 
 
 void deleteRelation(relation* rel) {	//this function must be moved to relation.c
 	free(rel->tuples) ;
-	free(rel) ;
+	free(rel) ;uint64_t payS, uint64_t 
+}
+
+void join(uint64_t payloadR, uint64_t payloadS, buffer *Buff){
+	uint64_t size;
+	int used, memleft; 
+
+	size = 2 * sizeof(uint64_t);
+	while(Buff->next != NULL) 
+		Buff = Buff->next;
+	if(size > Buff->memleft){
+		Buff->next = malloc(sizeof(buffer));
+		Buff = Buff->next;
+		Buff->memory = malloc(BUFFSIZE);
+		Buff->memleft = BUFFSIZE;
+		Buff->next = NULL;
+	}
+	used = BUFFSIZE - Buff->memleft;
+	memcpy((Buff->memory) + used, &payloadR, sizeof(uint64_t));
+	used += sizeof(uint64_t);
+	memcpy((Buff->memory) + used, &payloadS, sizeof(uint64_t));
+	Buff->memleft -= size;
+}
+
+buffer *merge(relation *relR, relation *relS){
+	buffer *Buff;
+	tuple *tuR, *tuS;
+	uint64_t counterR = 0, counterS = 0,lengthR, lengthS;
+	int same = 0, memleft = BUFFSIZE;
+
+	Buff = malloc(sizeof(buffer));
+	Buff->memory = malloc(BUFFSIZE);
+	Buff->next = NULL;
+	Buff->memleft = BUFFSIZE;
+	lengthR = relR->num_tuples;
+	lengthS = relS->num_tuples;
+	tuR = relR->tuples;
+	tuS = relS->tuples;
+
+	for(counterR = 0; counterR < lengthR; counterR++){	//for every tuple in relR
+		if(tuR->key < tuS->key){
+			tuR++;
+			continue;
+		}
+		else if(tuR->key > tuS->key){
+			while((tuR->key > tuS->key) && (counterS < lengthS)){
+				counterS++;
+				tuS++;
+			}
+
+		}
+		//now they are equal or there are no more tuples at realtion2
+		if(counterS == lengthS) break;
+		while((tuR->key == tuS->key) && (counterS < lengthS)){
+			join(tuR->payload, tuS->payload, Buff);//
+			same++; //keeps track of the sames so the next tuple  of realtion1 if it has the same key wont miss them
+			tuS++;
+			counterS++;
+		}
+		tuR++;
+		if(counterR + 1 < lengthR){
+			if (tuR->key == (tuS-same)->key){ //go back if same
+				tuS = tuS - same;
+				counterS = counterS - same;
+			}
+		}
+		if(counterS == lengthS) break;
+		same = 0;
+	}
+	return Buff;
 }
 
 /*result* SortMergeJoin(relation* relR, relation* relS) {
-	result* res ;
 	radix_sort(relR, 0) ;
 	radix_sort(relS, 0) ;
 	res=merge(relR, relS) ;
-	return res ;
+	return merge(relR, relS) ;
 }*/
 
 int main(int argc, char** argv) {
@@ -79,7 +148,8 @@ int main(int argc, char** argv) {
 	relation* rel2 ;
 	rel1=createRelation(table1, columns1, key1) ;
 	rel2=createRelation(table2, columns2, key2) ;
-	//result=SortMergeJoin(rel1, rel2) ;
+	//buffer Buff;
+	//Buff=SortMergeJoin(rel1, rel2) ;
 	deleteRelation(rel1) ;
 	deleteRelation(rel2) ;
 	deleteArray(table1, rows1) ;

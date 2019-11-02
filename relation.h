@@ -6,6 +6,17 @@ typedef struct relation {
 	uint64_t num_tuples;
 } relation;
 
+<<<<<<< HEAD
+=======
+typedef struct buffer{
+	void *memory;
+	struct buffer *next;
+	unsigned int memleft;
+} buffer;
+
+
+
+>>>>>>> b4d1d8488a8ee21682d45b05260fef2cdd4aa2dc
 int sort(relation *rel);
 
 int radix_sort(relation *rel,relation *rel2,int depth,uint64_t start);
