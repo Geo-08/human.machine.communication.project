@@ -29,7 +29,7 @@ relation* createRelation(uint64_t** table, int size, int key) {
 relation* createRandomRelation(void) {
 	int i, j ;
 	uint64_t size, random_key, random_payload ;
-	size=rand() ;
+	size=rand()%1000000 ;
 	relation* rel ;
 	rel=malloc(sizeof(relation)) ;
 	rel->tuples=malloc(sizeof(tuple)*size) ;
