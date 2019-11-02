@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "relation.h"
 
 #define MAXS 65536
@@ -56,6 +55,19 @@ int copy_relation (relation *to,uint64_t start,uint64_t size,relation *from){ //
 	for(i=0;i<size;i++)
 		to->tuples[i+start] = from->tuples[i];
 	return 0;
+}
+
+relation* createRelation(uint64_t** table, int size, int key) {
+	int i ;
+	relation* rel ;
+	rel=malloc(sizeof(relation)) ;
+	rel->tuples=malloc(sizeof(tuple)*size) ;
+	rel->num_tuples = size ;
+	for (i=0 ; i<size ; i++) {
+		rel->tuples[i].key=table[key][i] ;
+		rel->tuples[i].payload=i ;
+	}
+	return rel ;
 }
 
 relation* createRandomRelation(void) {
