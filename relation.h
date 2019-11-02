@@ -7,15 +7,6 @@ typedef struct relation {
 } relation;
 
 
-typedef struct buffer{
-	void *memory;
-	struct buffer *next;
-	unsigned int memleft;
-} buffer;
-
-
-
-
 int sort(relation *rel);
 
 int radix_sort(relation *rel,relation *rel2,int depth,uint64_t start);

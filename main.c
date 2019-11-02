@@ -1,21 +1,12 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
-#include "relation.h"
 #include "sortmj.h"
 
-uint64_t** readArray(char*, int*, int*, int*) ;
-void deleteArray(uint64_t**, int) ;
 
-
-/*result* SortMergeJoin(relation* relR, relation* relS) {
-	radix_sort(relR, 0) ;
-	radix_sort(relS, 0) ;
-	res=merge(relR, relS) ;
-	return merge(relR, relS) ;
-}*/
+uint64_t** readArray(char*, int*, int*, int*);
+void deleteArray(uint64_t**, int);
 
 int main(int argc, char** argv) {
 	uint64_t** table1 ;
@@ -44,11 +35,12 @@ int main(int argc, char** argv) {
 		printf("The number of arguements is incorrect.\n") ;
 		return -1 ;
 	}
-	buffer *Buff;
-	//Buff=SortMergeJoin(rel1, rel2) ;
 	print_relation(rel1, 0) ;
 	printf("\n") ;
 	print_relation(rel2, 0) ;
+	buffer *Buff;
+	Buff=SortMergeJoin(rel1, rel2) ;
+	printresult(Buff);
 	deleteRelation(rel1) ;
 	deleteRelation(rel2) ;
 	if (argc==3) {
