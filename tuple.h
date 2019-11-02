@@ -1,3 +1,6 @@
+#ifndef TUPLE_H
+#define TUPLE_H
+
 #include <inttypes.h>
 
 typedef struct tuple {
@@ -6,3 +9,5 @@ typedef struct tuple {
 } tuple;
 
 unsigned int n_first_bytes_num (tuple tup,int n);
+
+#endif
