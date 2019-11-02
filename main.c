@@ -1,10 +1,64 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 #include "relation.h"
-#define BUFFSIZE 1024*1024
+#include "sortmj.h"
 
-uint64_t** readArray(char* fileName, int* columns, int* rows, int *key) {
+uint64_t** readArray(char*, int*, int*, int*) ;
+void deleteArray(uint64_t**, int) ;
+
+
+/*result* SortMergeJoin(relation* relR, relation* relS) {
+	radix_sort(relR, 0) ;
+	radix_sort(relS, 0) ;
+	res=merge(relR, relS) ;
+	return merge(relR, relS) ;
+}*/
+
+int main(int argc, char** argv) {
+	uint64_t** table1 ;
+	uint64_t** table2 ;
+	int i, j, key1, key2, rows1, rows2, columns1, columns2 ;
+	relation* rel1 ;
+	relation* rel2 ;
+	if (argc==1) { //random
+		srand(time(0)) ;
+		rel1=createRandomRelation() ;
+		rel2=createRandomRelation() ;
+	}
+	else if (argc==3) {	//read
+		table1=readArray(argv[1], &columns1, &rows1, &key1) ;
+		table2=readArray(argv[2], &columns2, &rows2, &key2) ;
+		rel1=createRelation(table1, columns1, key1) ;
+		rel2=createRelation(table2, columns2, key2) ;
+	}
+	else if (argc==4) {
+		if (strcmp(argv[1], "dataset")) { //dataset
+			//rel1=readRelation(argv[2]) ;
+			//rel2=readRelation(argv[3]) ;
+		}
+	}
+	else {
+		printf("The number of arguements is incorrect.\n") ;
+		return -1 ;
+	}
+	buffer *Buff;
+	//Buff=SortMergeJoin(rel1, rel2) ;
+	print_relation(rel1, 0) ;
+	printf("\n") ;
+	print_relation(rel2, 0) ;
+	deleteRelation(rel1) ;
+	deleteRelation(rel2) ;
+	if (argc==3) {
+		deleteArray(table1, rows1) ;
+		deleteArray(table2, rows2) ;
+	}
+	return 0 ;
+}
+
+uint64_t** readArray(char* fileName, int* columns, int* rows, int* key) {
 	uint64_t** array ;
 	int i, j ;
 	FILE* file ;
@@ -34,125 +88,4 @@ void deleteArray(uint64_t** array, int size) {
 		free(array[i]) ;
 	}
 	free(array) ;
-}
-
-relation* createRelation(uint64_t** table, int size, int key) {	//this function must be moved to relation.c
-	int i ;
-	relation* rel ;
-	rel=malloc(sizeof(relation)) ;
-	rel->tuples=malloc(sizeof(tuple)*size) ;
-	rel->num_tuples = size ;
-	for (i=0 ; i<size ; i++) {
-		rel->tuples[i].key=table[key][i] ;
-		rel->tuples[i].payload=i ;
-	}
-	return rel ;
-}
-
-void deleteRelation(relation* rel) {	//this function must be moved to relation.c
-	free(rel->tuples) ;
-	free(rel) ;uint64_t payS, uint64_t 
-}
-
-void join(uint64_t payloadR, uint64_t payloadS, buffer *Buff){
-	uint64_t size;
-	int used, memleft; 
-
-	size = 2 * sizeof(uint64_t);
-	while(Buff->next != NULL) 
-		Buff = Buff->next;
-	if(size > Buff->memleft){
-		Buff->next = malloc(sizeof(buffer));
-		Buff = Buff->next;
-		Buff->memory = malloc(BUFFSIZE);
-		Buff->memleft = BUFFSIZE;
-		Buff->next = NULL;
-	}
-	used = BUFFSIZE - Buff->memleft;
-	memcpy((Buff->memory) + used, &payloadR, sizeof(uint64_t));
-	used += sizeof(uint64_t);
-	memcpy((Buff->memory) + used, &payloadS, sizeof(uint64_t));
-	Buff->memleft -= size;
-}
-
-buffer *merge(relation *relR, relation *relS){
-	buffer *Buff;
-	tuple *tuR, *tuS;
-	uint64_t counterR = 0, counterS = 0,lengthR, lengthS;
-	int same = 0, memleft = BUFFSIZE;
-
-	Buff = malloc(sizeof(buffer));
-	Buff->memory = malloc(BUFFSIZE);
-	Buff->next = NULL;
-	Buff->memleft = BUFFSIZE;
-	lengthR = relR->num_tuples;
-	lengthS = relS->num_tuples;
-	tuR = relR->tuples;
-	tuS = relS->tuples;
-
-	for(counterR = 0; counterR < lengthR; counterR++){	//for every tuple in relR
-		if(tuR->key < tuS->key){
-			tuR++;
-			continue;
-		}
-		else if(tuR->key > tuS->key){
-			while((tuR->key > tuS->key) && (counterS < lengthS)){
-				counterS++;
-				tuS++;
-			}
-
-		}
-		//now they are equal or there are no more tuples at realtion2
-		if(counterS == lengthS) break;
-		while((tuR->key == tuS->key) && (counterS < lengthS)){
-			join(tuR->payload, tuS->payload, Buff);//
-			same++; //keeps track of the sames so the next tuple  of realtion1 if it has the same key wont miss them
-			tuS++;
-			counterS++;
-		}
-		tuR++;
-		if(counterR + 1 < lengthR){
-			if (tuR->key == (tuS-same)->key){ //go back if same
-				tuS = tuS - same;
-				counterS = counterS - same;
-			}
-		}
-		if(counterS == lengthS) break;
-		same = 0;
-	}
-	return Buff;
-}
-
-/*result* SortMergeJoin(relation* relR, relation* relS) {
-	radix_sort(relR, 0) ;
-	radix_sort(relS, 0) ;
-	res=merge(relR, relS) ;
-	return merge(relR, relS) ;
-}*/
-
-int main(int argc, char** argv) {
-	if (argc<3) {
-		printf("Not enough arguements.\n") ;
-		return -1 ;
-	}
-	if (argc>3) {
-		printf("Too many arguements.\n") ;
-		return -1 ;
-	}
-	uint64_t** table1 ;
-	uint64_t** table2 ;
-	int i, j, key1, key2, rows1, rows2, columns1, columns2 ;
-	table1=readArray(argv[1], &columns1, &rows1, &key1) ;
-	table2=readArray(argv[2], &columns2, &rows2, &key2) ;
-	relation* rel1 ;
-	relation* rel2 ;
-	rel1=createRelation(table1, columns1, key1) ;
-	rel2=createRelation(table2, columns2, key2) ;
-	//buffer Buff;
-	//Buff=SortMergeJoin(rel1, rel2) ;
-	deleteRelation(rel1) ;
-	deleteRelation(rel2) ;
-	deleteArray(table1, rows1) ;
-	deleteArray(table2, rows2) ;
-	return 0 ;
 }
