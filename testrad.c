@@ -2,7 +2,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
-#include "relation.h"
+#include "sortmj.h"
 
 int main (int argc,char** argv){
 	char in[100];
