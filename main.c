@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <time.h>
+#include "relation.h"
 #include "sortmj.h"
 
 
@@ -35,9 +36,6 @@ int main(int argc, char** argv) {
 		printf("The number of arguements is incorrect.\n") ;
 		return -1 ;
 	}
-	print_relation(rel1, 0) ;
-	printf("\n") ;
-	print_relation(rel2, 0) ;
 	buffer *Buff;
 	Buff=SortMergeJoin(rel1, rel2) ;
 	printresult(Buff);
