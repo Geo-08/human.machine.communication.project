@@ -4,43 +4,6 @@
 #define MAXS 65536
 
 
-/*int radix_sort(relation *rel,int depth){	//call it with depth argument value 0, rel will point at a sorted relation at the end.
-	uint64_t hist[256];
-	create_hist(rel,hist,depth);
-	uint64_t psum[256]; 
-	create_psum(hist,psum);
-	relation *rel2;
-	rel2 = (relation*) malloc(sizeof (relation));
-	rel2->tuples = (tuple*)malloc(sizeof(tuple)*rel->num_tuples);
-	rel2->num_tuples = rel->num_tuples;
-	uint64_t i;
-	unsigned int j;
-	for (i=0;i<rel->num_tuples;i++){ 	//copies the contents of rel to rel2 partialy sorted
-		j = n_first_bytes_num (rel->tuples[i],depth);
-		rel2->tuples[psum[j]] = rel->tuples[i];
-		psum[j]++;
-	}
-	create_psum(hist,psum);
-	for (j=0;j<256;j++){
-		if(hist[j] !=0){
-			if(hist[j]*16< MAXS || depth == 8){	//checks if the amount of memory the tuples occupy in bucket j is less than 64kb
-				isolate(rel2,psum[j],hist[j],rel);	//rel will have only the contents of bucket j
-				quicksort (rel,0,(rel->num_tuples-1)); //rel gets sorted
-				copy_relation (rel2,psum[j],hist[j],rel); //the sorted result is then copied back to rel2 in the corret place
-			}
-			else{ //in case the memory the tuples occupy in bucket j is more or equal to 64kb
-				isolate(rel2,psum[j],hist[j],rel); //rel will have only the contents of bucket j
-				radix_sort(rel,(depth+1)); //radix_sort only on rel that now has only the contents of bucket j and depth is incr by 1
-				copy_relation (rel2,psum[j],hist[j],rel); //the sorted result is then copied back to rel2 in the correct place
-			}	
-		}
-	}
-	rel->num_tuples = rel2->num_tuples; //finally rel becomes a sorted.
-	copy_relation(rel,0,rel2->num_tuples,rel2);
-	free(rel2->tuples);
-	free(rel2);
-	return 0;
-}*/
 
 int sort(relation *rel){
 	if (rel->num_tuples*16 < MAXS){//if the relation is small on it's own jump straight into qucksort
@@ -67,40 +30,25 @@ int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call i
 	create_psum(hist,psum,start);
 	uint64_t i;
 	unsigned int j;
-	printf("gate 0\n");
 	for (i=0;i<rel->num_tuples;i++){ 	//copies the contents of rel to rel2 partialy sorted
 		j = n_first_bytes_num (rel->tuples[i],depth);
 		rel2->tuples[psum[j]] = rel->tuples[i];
 		psum[j]++;
 	}
-	printf("gate 1\n");
 	create_psum(hist,psum,start);
 	for (j=0;j<256;j++){
 		if(hist[j] !=0){
 			if(hist[j]*16< MAXS || depth == 8){	//checks if the amount of memory the tuples occupy in bucket j is less than 64kb
-				printf("gate 2\n");
 				isolate(rel2,psum[j],hist[j],rel);	//rel will have only the contents of bucket j
-				printf("gate 3\n");
 				quicksort (rel,0,(rel->num_tuples-1)); //rel gets sorted
-				printf("gate 4\n");
 				copy_relation (rel2,psum[j],hist[j],rel); //the sorted result is then copied back to rel2 in the corret place
-				printf("gate 5\n");
 			}
 			else{ //in case the memory the tuples occupy in bucket j is more or equal to 64kb
-				printf("gate 6\n");
 				isolate(rel2,psum[j],hist[j],rel); //rel will have only the contents of bucket j
-				printf("gate 7\n");
 				radix_sort(rel,rel2,(depth+1),psum[j]); //radix_sort only on rel that now has only the contents of bucket j and depth is incr by 1
-				printf("gate 8\n");
-				//copy_relation (rel2,psum[j],hist[j],rel); //the sorted result is then copied back to rel2 in the correct place
-				//printf("gate 9\n");
 			}	
 		}
 	}
-	/*printf("gate 10\n");
-	rel->num_tuples = rel2->num_tuples; //finally rel becomes a sorted.
-	printf("gate 11\n");
-	copy_relation(rel,0,rel2->num_tuples,rel2);*/
 	printf("all clear\n");
 	return 0;
 }
@@ -118,7 +66,7 @@ void quicksort (relation *rel,uint64_t low,uint64_t high){
 		q = partition(rel,low,high);
 		if(q !=0) //avoiding q-1 to give us a number larger than 0 and thus a segmentation fault
 			quicksort(rel,low,q-1);
-		if(q != 2^64)
+		if(q != 2^64) // avoiding q+1 to give us 0 and thus a potential segmentation fault
 			quicksort(rel,q+1,high);
 	}
 }
