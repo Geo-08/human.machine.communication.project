@@ -1,3 +1,6 @@
+#ifndef RELATION_H
+#define RELATION_H
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -28,3 +31,5 @@ int isolate(relation *rel,uint64_t start,uint64_t size,relation *out);
 void check_sorting(relation *rel,int length);
 
 void print_relation(relation *rel, int length);
+
+#endif
