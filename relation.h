@@ -22,6 +22,14 @@ int radix_sort(relation *rel,relation *rel2,int depth,uint64_t start);
 
 int copy_relation (relation *to,uint64_t start,uint64_t size,relation *from);
 
+relation* createRelation(uint64_t**,int,int);
+
+relation* createRandomRelation(void) ;
+
+relation* readRelation(char*) ;
+
+void deleteRelation(relation*);
+
 void quicksort (relation *rel,uint64_t low,uint64_t high);
 
 uint64_t partition(relation *rel,int low,int high);
