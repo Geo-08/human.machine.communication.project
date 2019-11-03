@@ -41,8 +41,8 @@ relation* createRandomRelation(void) {
 			random_key=random_key*2 + rand()%2 ;
 			random_payload=random_payload*2 + rand()%2 ;
 		}
-		rel->tuples[i].key =  random_key ;
-		rel->tuples[i].payload =  random_payload ;
+		rel->tuples[i].key=random_key ;
+		rel->tuples[i].payload=random_payload ;
 	}
 	return rel ;
 }
@@ -52,26 +52,34 @@ relation* readRelation(char* fileName) {
 	uint64_t key, payload ;
 	FILE* file ;
 	file=fopen(fileName, "r") ;
+	int i=0 ;
 	char* line ;
-	size_t length ;
+	size_t length, read ;
 	char* token ;
 	rel=malloc(sizeof(relation)) ;
 	if (file) {
-		while(getline(&line, &length, file)) {
+		while((read = getline(&line, &length, file)) != -1) {
 			token=strtok(line, ", ") ;
-			key=atoi(token) ;
-			printf("%s\n", token) ;
-			token=strtok(NULL, ", ") ;
-			payload=atoi(token) ;
+			key=strtoull(token, NULL, 10) ;
+			token=strtok(NULL, ", \n") ;
+			payload=strtoull(token, NULL, 10) ;
+			if (i==0)
+				rel->tuples=malloc(sizeof(tuple)) ;
+			else
+				rel->tuples=realloc(rel->tuples, sizeof(tuple)*(i+1)) ;
+			rel->tuples[i].key=key ;
+			rel->tuples[i].payload=payload ;
+			i++ ;
 		}
 	}
+	rel->num_tuples=i ;
 	fclose(file) ;
 	return rel ;
 }
 
 void deleteRelation(relation* rel) {
 	free(rel->tuples) ;
-	free(rel) ;uint64_t payS, uint64_t ;
+	free(rel) ;
 }
 
 
