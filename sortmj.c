@@ -94,16 +94,15 @@ void createBuffer(buffer **Buff){
 	(*Buff)->memleft = BUFFSIZE;
 }
 
-void join(uint64_t payloadR, uint64_t payloadS, buffer *Buff){
+void join(uint64_t payloadR, uint64_t payloadS, buffer **Buffp){
 	uint64_t size;
 	int used, memleft; 
-
+	buffer *Buff = *Buffp;
 	size = 2 * sizeof(uint64_t);
-	while(Buff->next != NULL) 
-		Buff = Buff->next;
 	if(size > Buff->memleft){
 		createBuffer(&(Buff->next));
 		Buff = Buff->next;
+		*Buffp = (*Buffp)->next;
 	}
 	used = BUFFSIZE - Buff->memleft;
 	memcpy((Buff->memory) + used, &payloadR, sizeof(uint64_t));
@@ -113,12 +112,13 @@ void join(uint64_t payloadR, uint64_t payloadS, buffer *Buff){
 }
 
 buffer *merge(relation *relR, relation *relS){
-	buffer *Buff;
+	buffer *Bstart, *Buff;
 	tuple *tuR, *tuS;
 	uint64_t counterR = 0, counterS = 0,lengthR, lengthS;
 	int same = 0;
 
 	createBuffer(&Buff);
+	Bstart = Buff;
 	lengthR = relR->num_tuples;
 	lengthS = relS->num_tuples;
 	tuR = relR->tuples;
@@ -136,10 +136,10 @@ buffer *merge(relation *relR, relation *relS){
 			}
 
 		}
-		//now they are equal or there are no more tuples at realtion2
+		//now they are equal or there are no more tuples at realtionS
 		if(counterS == lengthS) break;
 		while((tuR->key == tuS->key) && (counterS < lengthS)){
-			join(tuR->payload, tuS->payload, Buff);//
+			join(tuR->payload, tuS->payload, &Buff);//
 			same++; //keeps track of the sames so the next tuple  of realtion1 if it has the same key wont miss them
 			tuS++;
 			counterS++;
@@ -154,7 +154,7 @@ buffer *merge(relation *relR, relation *relS){
 		if(counterS == lengthS) break;
 		same = 0;
 	}
-	return Buff;
+	return Bstart;
 }
 
 buffer* SortMergeJoin(relation* relR, relation* relS) {
@@ -200,6 +200,7 @@ void swap(tuple *a,tuple *b){
 void deletebuffer(buffer *Buff){
 	buffer *nextb;
 	while(Buff != NULL){
+		printf("NEXT\n");
 		nextb = Buff->next;
 		free(Buff->memory);
 		free(Buff);
