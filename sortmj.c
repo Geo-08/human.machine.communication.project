@@ -79,7 +79,7 @@ void printresult(buffer *Buff){
 		used += sizeof(uint64_t);
 		memcpy(&row2, (Buff->memory) + used, sizeof(uint64_t));
 		used += sizeof(uint64_t);
-		printf("(%ld,%ld)\n", row1, row2);
+		printf("(%lu,%lu)\n", row1, row2);
 		if(used + 2*sizeof(uint64_t) > BUFFSIZE){
 			Buff = Buff->next;
 			used = 0;
