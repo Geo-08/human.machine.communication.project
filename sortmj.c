@@ -200,7 +200,6 @@ void swap(tuple *a,tuple *b){
 void deletebuffer(buffer *Buff){
 	buffer *nextb;
 	while(Buff != NULL){
-		printf("NEXT\n");
 		nextb = Buff->next;
 		free(Buff->memory);
 		free(Buff);
