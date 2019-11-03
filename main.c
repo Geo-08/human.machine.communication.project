@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
 	buffer *Buff;
 	Buff=SortMergeJoin(rel1, rel2) ;
 	printresult(Buff);
+	deletebuffer(Buff);
 	deleteRelation(rel1) ;
 	deleteRelation(rel2) ;
 	if (argc==3) {

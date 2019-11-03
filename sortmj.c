@@ -196,3 +196,13 @@ void swap(tuple *a,tuple *b){
 	*a = *b;
 	*b = t;
 }
+
+void deletebuffer(buffer *Buff){
+	buffer *nextb;
+	while(Buff != NULL){
+		nextb = Buff->next;
+		free(Buff->memory);
+		free(Buff);
+		Buff = nextb;
+	}
+}
