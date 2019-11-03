@@ -27,9 +27,9 @@ int main(int argc, char** argv) {
 		rel2=createRelation(table2, columns2, key2) ;
 	}
 	else if (argc==4) {
-		if (strcmp(argv[1], "dataset")) { //dataset
-			//rel1=readRelation(argv[2]) ;
-			//rel2=readRelation(argv[3]) ;
+		if (strcmp(argv[1], "dataset")==0) { //dataset
+			rel1=readRelation(argv[2]) ;
+			rel2=readRelation(argv[3]) ;
 		}
 	}
 	else {
