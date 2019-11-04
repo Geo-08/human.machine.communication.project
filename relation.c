@@ -1,11 +1,6 @@
 #include "relation.h"
 
 
-
-
-
-
-
 int copy_relation (relation *to,uint64_t start,uint64_t size,relation *from){ //copies contents from relation from to relation to at a specific place
 	uint64_t  i;
 	for(i=0;i<size;i++)
@@ -17,7 +12,15 @@ relation* createRelation(uint64_t** table, int size, int key) {
 	int i ;
 	relation* rel ;
 	rel=malloc(sizeof(relation)) ;
+	if(rel==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return NULL ;
+	}
 	rel->tuples=malloc(sizeof(tuple)*size) ;
+	if(rel->tuples==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return NULL;
+	}
 	rel->num_tuples = size ;
 	for (i=0 ; i<size ; i++) {
 		rel->tuples[i].key=table[key][i] ;
@@ -32,7 +35,15 @@ relation* createRandomRelation(void) {
 	size=rand()%1000000 ;
 	relation* rel ;
 	rel=malloc(sizeof(relation)) ;
+	if(rel==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return NULL;
+	}
 	rel->tuples=malloc(sizeof(tuple)*size) ;
+	if(rel->tuples==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return NULL;
+	}
 	rel->num_tuples=size ;
 	for (i=0 ; i<size ; i++) {
 		random_key=0 ;
@@ -57,16 +68,30 @@ relation* readRelation(char* fileName) {
 	size_t length, read ;
 	char* token ;
 	rel=malloc(sizeof(relation)) ;
+	if(rel==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return NULL;
+	}
 	if (file) {
 		while((read = getline(&line, &length, file)) != -1) {
 			token=strtok(line, ", ") ;
 			key=strtoull(token, NULL, 10) ;
 			token=strtok(NULL, ", \n") ;
 			payload=strtoull(token, NULL, 10) ;
-			if (i==0)
+			if (i==0) {
 				rel->tuples=malloc(sizeof(tuple)) ;
-			else
+				if(rel->tuples==NULL) {
+					printf("Error:Memory not allocated.") ;
+					return NULL;
+				}
+			}
+			else {
 				rel->tuples=realloc(rel->tuples, sizeof(tuple)*(i+1)) ;
+				if(rel->tuples==NULL) {
+					printf("Error:Memory not allocated.") ;
+					return NULL;
+				}
+			}
 			rel->tuples[i].key=key ;
 			rel->tuples[i].payload=payload ;
 			i++ ;
