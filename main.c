@@ -60,8 +60,16 @@ uint64_t** readArray(char* fileName, int* columns, int* rows, int* key) {
 		fscanf(file, "%d", columns) ;
 		fscanf(file, "%d", key) ;
 		array=malloc((*rows)*sizeof(uint64_t*)) ;
+		if(array==NULL) {
+			printf("Error:Memory not allocated.") ;
+			return NULL;
+		}
 		for (i=0 ; i<(*rows) ; i++) {
 			array[i]=malloc((*columns)*sizeof(uint64_t)) ;
+			if(array[i]==NULL) {
+				printf("Error:Memory not allocated.") ;
+				return NULL;
+			}
 		}
 		for (i=0 ; i<(*rows) ; i++) {
 			for (j=0 ; j<(*columns) ; j++) {
