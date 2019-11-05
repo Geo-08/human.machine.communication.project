@@ -12,6 +12,8 @@ void TestTwoNullRelation(CuTest*) ;
 void TestOneEmptyRelation(CuTest*) ;
 void TestOneNullRelation(CuTest*) ;
 void TestSmallRelation(CuTest*) ;
+void TestSmallSameRelation(CuTest*) ;
+void TestMediumNoCommonRelation(CuTest*) ;
 void CuAssertBufferEquals(CuTest*, buffer*, buffer*) ;
 
 void RunAllTests(void) {
@@ -39,6 +41,8 @@ CuSuite* CuGetSuite(void)
 	SUITE_ADD_TEST(suite, TestOneEmptyRelation) ;
 	SUITE_ADD_TEST(suite, TestOneNullRelation) ;
 	SUITE_ADD_TEST(suite, TestSmallRelation) ;
+	SUITE_ADD_TEST(suite, TestSmallSameRelation) ;
+	SUITE_ADD_TEST(suite, TestMediumNoCommonRelation) ;
 	
 	return suite;
 }
@@ -105,7 +109,7 @@ void TestSmallRelation(CuTest* tc) {
 	uint64_t payload3=rel1->tuples[1].payload ;
 	uint64_t payload4=rel2->tuples[0].payload ;
 	actual=SortMergeJoin(rel1, rel2) ;
-	
+
 	buffer* expected ;
 	createBuffer(&expected) ;
 	uint64_t size;
@@ -121,6 +125,65 @@ void TestSmallRelation(CuTest* tc) {
 	used += sizeof(uint64_t);
 	memcpy((expected->memory) + used, &payload4, sizeof(uint64_t));
 	expected->memleft -= size;
+	CuAssertBufferEquals(tc, expected, actual) ;
+	deletebuffer(actual) ;
+	deletebuffer(expected) ;
+	deleteRelation(rel1) ;
+	deleteRelation(rel2) ;
+}
+
+void TestSmallSameRelation(CuTest* tc) {
+	relation* rel ;
+	rel=malloc(sizeof(relation)) ;
+	rel->tuples=malloc(sizeof(tuple)*4) ;
+	rel->num_tuples=4 ;
+	int i ;
+	for (i=0 ; i<4 ; i++) {
+		rel->tuples[i].key=i ;
+		rel->tuples[i].payload=i ;
+	}
+	buffer* actual ;
+	actual=SortMergeJoin(rel, rel) ;
+	
+	buffer* expected ;
+	createBuffer(&expected) ;
+	uint64_t size;
+	int used, memleft; 
+	size = 2 * sizeof(uint64_t);
+	used = BUFFSIZE - expected->memleft;
+	uint64_t payloads[8] ;
+	for (i=0 ; i<8 ; i++) {
+		payloads[i]=i/2 ;
+		memcpy((expected->memory) + used, &payloads[i], sizeof(uint64_t));
+		used += sizeof(uint64_t);
+	}
+	expected->memleft -= (4*size) ;
+	CuAssertBufferEquals(tc, expected, actual) ;
+	deletebuffer(actual) ;
+	deletebuffer(expected) ;
+	deleteRelation(rel) ;
+}
+
+void TestMediumNoCommonRelation(CuTest* tc) {
+	relation* rel1 ;
+	relation* rel2 ;
+	rel1=malloc(sizeof(relation)) ;
+	rel1->tuples=malloc(sizeof(tuple)*4100) ;
+	rel1->num_tuples=4100 ;
+	rel2=malloc(sizeof(relation)) ;
+	rel2->tuples=malloc(sizeof(tuple)*4100) ;
+	rel2->num_tuples=4100 ;
+	int i ;
+	for (i=0 ; i<4100 ; i++) {
+		rel1->tuples[i].key=i ;
+		rel1->tuples[i].payload=i ;
+		rel2->tuples[i].key=i+4100 ;
+		rel2->tuples[i].payload=i ;
+	}
+	buffer* actual ;
+	actual=SortMergeJoin(rel1, rel2) ;
+	buffer* expected ;
+	createBuffer(&expected) ;
 	CuAssertBufferEquals(tc, expected, actual) ;
 	deletebuffer(actual) ;
 	deletebuffer(expected) ;
