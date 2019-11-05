@@ -16,9 +16,26 @@ Otherwise the contents of the "bucket" will be copied again to rel and radix_sor
 Eventually rel2 becomes sorted.
 returns 0 on success.
 
+uint64_t** readArray(char* fileName, int* columns, int* rows, int* key)
+creates a 2D array based on the data of fileName. The file must contain in order the size of columns and rows, the key, then the data.
+
+void deleteArray(uint64_t** array, int size)
+deletes a 2D array.
+
+relation* createRelation(uint64_t** table, int size, int key)
+creates a relation based on the table and the key.
+
+relation* createRandomRelation(void)
+creates a relation with size from 0 to 9999 with keys and payloads ranging from 4294966795 to 4294967794.
+
+relation* readRelation(char* fileName)
+reads a file from dataset, then creates a relation based on the data.
+
+void deleteRelation(relation* rel)
+frees the data of a relation.
 
 int copy_relation (relation *to,uint64_t start,uint64_t size,relation *from)
-coppies 'size' number of tuples from relation 'from' to relation 'to' starting from to->tuples[start].
+copies 'size' number of tuples from relation 'from' to relation 'to' starting from to->tuples[start].
 returns 0 on success.
 
 quicksort, partition, swap are used for the implementation of quicksort. only notable aspect is that due to the nature of using unsigned integers,
@@ -43,7 +60,24 @@ prints related message.
 void print_relation(relation *rel, int length)
 prints 'length' first elements from relation rel on screen, all of them if length is 0.
 
+void createBuffer(buffer **Buff)
+builds a struct buffer in *Buff
 
+void join(uint64_t payloadR, uint64_t payloadS, buffer **Buff)
+copies the payloads inside the buffer starting from the last add, if there is no more memory left creates another buffer
+
+buffer *merge(relation *relR, relation *relS)
+for each element.key in relR from the start search the relS for same element.key.
+comments will help understand
+
+buffer *SortMergeJoin(relation* relR, relation* relS)
+sorts the relations and returns the buffer with merged result
+
+void printresult(buffer *Buff)
+prints the buffer
+
+void deletebuffer(buffer *Buff)
+frees the buffer
 
 
 

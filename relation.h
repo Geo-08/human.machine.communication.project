@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include "tuple.h"
 
+#define LARGE_NUMBER 4294966795
+
 typedef struct relation {
 	tuple *tuples;
 	uint64_t num_tuples;

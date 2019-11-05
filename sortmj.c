@@ -2,13 +2,24 @@
 #include <stdio.h>
 
 int sort(relation *rel){
+	if (rel==NULL || rel->num_tuples==0) {	//if the relation is empty or NULL 
+		return 0 ;
+	}
 	if (rel->num_tuples*16 < MAXS){//if the relation is small on it's own jump straight into qucksort
 		quicksort (rel,0,(rel->num_tuples-1));
 		return 0;
 	}
 	relation *rel2;
 	rel2 = (relation*)malloc(sizeof (relation));
+	if(rel2==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return -1 ;
+	}
 	rel2->tuples = (tuple*)malloc(sizeof(tuple)*rel->num_tuples);
+	if(rel2->tuples==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return -1 ;
+	}
 	rel2->num_tuples = rel->num_tuples;
 	radix_sort(rel,rel2,0,0);
 	rel->num_tuples = rel2->num_tuples; 
@@ -89,8 +100,16 @@ void printresult(buffer *Buff){
 
 void createBuffer(buffer **Buff){
 	*Buff = malloc(sizeof(buffer));
+	if((*Buff)==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return ;
+	}
 	(*Buff)->next = NULL;
 	(*Buff)->memory = malloc(BUFFSIZE);
+	if((*Buff)->memory==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return ;
+	}
 	(*Buff)->memleft = BUFFSIZE;
 }
 
@@ -112,10 +131,13 @@ void join(uint64_t payloadR, uint64_t payloadS, buffer **Buffp){
 }
 
 buffer *merge(relation *relR, relation *relS){
-	buffer *Bstart, *Buff;
+
+	if (relR==NULL || relS==NULL || relR->num_tuples==0 || relS->num_tuples==0)	//if at least one relation is empty or null 
+		return NULL ;
 	tuple *tuR, *tuS;
 	uint64_t counterR = 0, counterS = 0,lengthR, lengthS;
 	int same = 0;
+	buffer *Bstart, *Buff;
 
 	createBuffer(&Buff);
 	Bstart = Buff;
