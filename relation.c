@@ -21,6 +21,8 @@ relation* createRelation(uint64_t** table, int size, int key) {
 		printf("Error:Memory not allocated.") ;
 		return NULL;
 	}
+	if (table==NULL)
+		return NULL ;
 	rel->num_tuples = size ;
 	for (i=0 ; i<size ; i++) {
 		rel->tuples[i].key=table[key][i] ;
@@ -32,7 +34,7 @@ relation* createRelation(uint64_t** table, int size, int key) {
 relation* createRandomRelation(void) {
 	int i, j ;
 	uint64_t size, random_key, random_payload ;
-	size=rand()%1000000 ;
+	size=rand()%10000 ;
 	relation* rel ;
 	rel=malloc(sizeof(relation)) ;
 	if(rel==NULL) {
@@ -46,14 +48,8 @@ relation* createRandomRelation(void) {
 	}
 	rel->num_tuples=size ;
 	for (i=0 ; i<size ; i++) {
-		random_key=0 ;
-		random_payload=0 ;
-		for (j=0 ; j<64 ; j++) {
-			random_key=random_key*2 + rand()%2 ;
-			random_payload=random_payload*2 + rand()%2 ;
-		}
-		rel->tuples[i].key=random_key ;
-		rel->tuples[i].payload=random_payload ;
+		rel->tuples[i].key=LARGE_NUMBER +rand()%1000 ;
+		rel->tuples[i].payload=LARGE_NUMBER +rand()%1000 ;
 	}
 	return rel ;
 }
@@ -96,9 +92,13 @@ relation* readRelation(char* fileName) {
 			rel->tuples[i].payload=payload ;
 			i++ ;
 		}
+		rel->num_tuples=i ;
+		fclose(file) ;
 	}
-	rel->num_tuples=i ;
-	fclose(file) ;
+	else {
+		printf("Error:Can't open file.\n") ;
+		return NULL ;
+	}
 	return rel ;
 }
 
