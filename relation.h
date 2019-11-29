@@ -9,6 +9,8 @@
 #define LARGE_NUMBER 4294966795
 
 typedef struct relation {
+	int* ids;
+	int num_ids;
 	tuple *tuples;
 	uint64_t num_tuples;
 } relation;
@@ -18,11 +20,11 @@ typedef struct relation {
 
 int copy_relation (relation *to,uint64_t start,uint64_t size,relation *from);
 
-relation* createRelation(uint64_t**,int,int);
+/*relation* createRelation(uint64_t**,int,int);
 
 relation* createRandomRelation(void) ;
 
-relation* readRelation(char*) ;
+relation* readRelation(char*) ;*/
 
 void deleteRelation(relation*);
 
@@ -32,6 +34,6 @@ int isolate(relation *rel,uint64_t start,uint64_t size,relation *out);
 
 void check_sorting(relation *rel,int length);
 
-void print_relation(relation *rel, int length);
+//void print_relation(relation *rel, int length);
 
 #endif

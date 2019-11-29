@@ -8,7 +8,7 @@ int copy_relation (relation *to,uint64_t start,uint64_t size,relation *from){ //
 	return 0;
 }
 
-relation* createRelation(uint64_t** table, int size, int key) {
+/*relation* createRelation(uint64_t** table, int size, int key) {
 	int i ;
 	relation* rel ;
 	rel=malloc(sizeof(relation)) ;
@@ -26,7 +26,8 @@ relation* createRelation(uint64_t** table, int size, int key) {
 	rel->num_tuples = size ;
 	for (i=0 ; i<size ; i++) {
 		rel->tuples[i].key=table[key][i] ;
-		rel->tuples[i].payload=i ;
+		rel->tuples[i].payload = (uint64_t*)malloc(sizeof(uint64_t));
+		rel->tuples[i].payload[0]=i ;
 	}
 	return rel ;
 }
@@ -49,6 +50,7 @@ relation* createRandomRelation(void) {
 	rel->num_tuples=size ;
 	for (i=0 ; i<size ; i++) {
 		rel->tuples[i].key=LARGE_NUMBER +rand()%1000 ;
+		rel->tuples[i].payload = (uint64_t*)malloc(sizeof(uint64_t));
 		rel->tuples[i].payload=LARGE_NUMBER +rand()%1000 ;
 	}
 	return rel ;
@@ -89,7 +91,8 @@ relation* readRelation(char* fileName) {
 				}
 			}
 			rel->tuples[i].key=key ;
-			rel->tuples[i].payload=payload ;
+			rel->tuples[i].payload = (uint64_t*)malloc(sizeof(uint64_t));
+			rel->tuples[i].payload[0]=payload ;
 			i++ ;
 		}
 		rel->num_tuples=i ;
@@ -100,7 +103,7 @@ relation* readRelation(char* fileName) {
 		return NULL ;
 	}
 	return rel ;
-}
+}*/
 
 void deleteRelation(relation* rel) {
 	free(rel->tuples) ;
@@ -134,10 +137,10 @@ void check_sorting(relation *rel,int length){  //checks if 'length' first elemen
 	return;
 }
 
-void print_relation(relation *rel, int length){ //prints the 'legtnh' tuples of a relation, if length is 0, it prints the whole
+/*void print_relation(relation *rel, int length){ //prints the 'legtnh' tuples of a relation, if length is 0, it prints the whole
 	if (length == 0)
 		length = rel->num_tuples;
 	int i;
 	for(i=0;i<length;i++)
-		printf("%" PRIu64 " , " "%" PRIu64 "\n",rel->tuples[i].key,rel->tuples[i].payload);
-}
+		printf("%" PRIu64 " , " "%" PRIu64 "\n",rel->tuples[i].key,rel->tuples[i].payload[0]);
+}*/
