@@ -81,7 +81,7 @@ int create_psum (uint64_t *hist,uint64_t* psum,uint64_t start){ //creates psum
 
 }
 
-void printresult(buffer *Buff){
+/*void printresult(buffer *Buff){
 	printf("\n--------RESULT--------\n");
 	unsigned int used = 0;
 	uint64_t row1,row2;
@@ -183,7 +183,7 @@ buffer* SortMergeJoin(relation* relR, relation* relS) {
 	sort(relR);
 	sort(relS);
 	return merge(relR, relS) ;
-}
+}*/
 
 
 void quicksort (relation *rel,uint64_t low,uint64_t high){
@@ -219,7 +219,7 @@ void swap(tuple *a,tuple *b){
 	*b = t;
 }
 
-void deletebuffer(buffer *Buff){
+/*void deletebuffer(buffer *Buff){
 	buffer *nextb;
 	while(Buff != NULL){
 		nextb = Buff->next;
@@ -227,4 +227,4 @@ void deletebuffer(buffer *Buff){
 		free(Buff);
 		Buff = nextb;
 	}
-}
+}*/

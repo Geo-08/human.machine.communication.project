@@ -6,7 +6,7 @@
 #define BUFFSIZE 1024*1024
 #define MAXS 65536
 
-typedef struct buffer{
+/*typedef struct buffer{
 	void *memory;
 	struct buffer *next;
 	unsigned int memleft;
@@ -18,6 +18,7 @@ buffer *merge(relation *relR, relation *relS);
 buffer *SortMergeJoin(relation* relR, relation* relS);
 void printresult(buffer *Buff);
 void deletebuffer(buffer *Buff);
+*/
 
 int sort(relation *rel);
 
