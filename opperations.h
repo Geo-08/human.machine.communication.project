@@ -45,7 +45,7 @@ typedef struct query{
 void print_inb(inbetween* inb);
 void equals(inbetween* inb,int place);
 void join_rels(inbetween* inb,int place1,int place2);
-void query_comp(TableStorage* store,char* tq);
+uint64_t* query_comp(TableStorage* store,char* tq);
 void lower_than (inbetween* inb,int place,uint64_t fil);
 void bigger_than (inbetween* inb,int place,uint64_t fil);
 void equal_to (inbetween* inb,int place,uint64_t fil);

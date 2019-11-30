@@ -4,8 +4,8 @@
 
 int gcounter =0;
 
-void query_comp(TableStorage* store,char* tq){
-	printf("Query %d\n",gcounter);
+uint64_t* query_comp(TableStorage* store,char* tq){
+	//printf("Query %d\n",gcounter);
 	gcounter++;
 	query* qu;
 	query_init(&qu);
@@ -75,6 +75,8 @@ void query_comp(TableStorage* store,char* tq){
 		join_rels(inb,place,place2);//joins sorted relations
 	}
 	uint64_t summ,j;
+	uint64_t* out;
+	out = (uint64_t*)malloc(sizeof(uint64_t)*qu->snum);
 	for(i=0;i<qu->snum;i++){//calculates sums
 		relnum = qu->relation_numbers[qu->sums[i].rel];
 		colnum = qu->sums[i].col;
@@ -83,10 +85,17 @@ void query_comp(TableStorage* store,char* tq){
 		summ=0;
 		for(j=0;j<inb->rels[place].num_tuples;j++)
 			summ = summ + inb->rels[place].tuples[j].key;
-		printf("%" PRIu64 "\n",summ);		 
+		out[i] = summ;
+		if(summ == 0)
+			printf("NULL ");
+		else
+			printf("%" PRIu64" ",summ);		 
 	}
+	printf("\n");
 	delete_inb(inb);
 	delete_query(qu);
+	free(out);
+	//return out;
 }
 
 void equals(inbetween* inb,int place){
@@ -106,12 +115,13 @@ void equals(inbetween* inb,int place){
 				temp.tuples[temp.num_tuples].payload[j] = inb->rels[place].tuples[i].payload[j];
 			temp.num_tuples++;
 		}
+		free(inb->rels[place].tuples[i].payload);
 	}
 	temp.keyid = inb->rels[place].keyid;
 	temp.keycol = inb->rels[place].keycol;
 	temp.sorted = inb->rels[place].sorted;
-	for(i=0;i<inb->rels[place].num_tuples;i++)
-		free(inb->rels[place].tuples[i].payload);
+	/*for(i=0;i<inb->rels[place].num_tuples;i++)
+		free(inb->rels[place].tuples[i].payload);*/
 		free(inb->rels[place].ids);
 		free(inb->rels[place].tuples);
 	inb->rels[place]=temp;
@@ -139,6 +149,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 			if(inb->rels[place1].tuples[i].key < inb->rels[place2].tuples[j].key)
 				break;
 			if(inb->rels[place1].tuples[i].key > inb->rels[place2].tuples[j].key){
+				free(inb->rels[place2].tuples[j].payload);
 				ms = j+1;
 				continue;	
 			}
@@ -155,17 +166,17 @@ void join_rels(inbetween* inb,int place1,int place2){
 					temp.tuples[temp.num_tuples].payload[x+inb->rels[place1].num_ids] = inb->rels[place2].tuples[j].payload[x];
 				temp.num_tuples++;
 			}
-				
 		}
+		free(inb->rels[place1].tuples[i].payload);
 	}
 	temp.keyid = inb->rels[place1].keyid;
 	temp.keycol = inb->rels[place1].keycol;
 	temp.sorted = inb->rels[place1].sorted;
-	for(i=0;i<inb->rels[place1].num_tuples;i++)
-		free(inb->rels[place1].tuples[i].payload);
+	/*for(i=0;i<inb->rels[place1].num_tuples;i++)
+		free(inb->rels[place1].tuples[i].payload);*/
 		free(inb->rels[place1].ids);
 		free(inb->rels[place1].tuples);
-	for(i=0;i<inb->rels[place2].num_tuples;i++)
+	for(i=ms;i<inb->rels[place2].num_tuples;i++)
 		free(inb->rels[place2].tuples[i].payload);
 		free(inb->rels[place2].ids);
 		free(inb->rels[place2].tuples);
