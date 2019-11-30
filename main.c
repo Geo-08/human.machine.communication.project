@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
 	size_t length=100 ;
 	char* query=malloc(100*sizeof(char)) ;
 	while (getline(&query, &length, stdin)!=-1) {
-		if (strcmp(query, "F")!=0)
+		if (strcmp(query, "F\n")!=0)
 			query_comp(tableStorage, query) ;
 	}	
 	free(query) ;
