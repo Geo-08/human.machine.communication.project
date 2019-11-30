@@ -2,9 +2,11 @@
 #include <string.h>
 #include <stdio.h>
 
-
+int gcounter =0;
 
 void query_comp(TableStorage* store,char* tq){
+	printf("Query %d\n",gcounter);
+	gcounter++;
 	query* qu;
 	query_init(&qu);
 	read_query(qu,tq);
@@ -19,7 +21,11 @@ void query_comp(TableStorage* store,char* tq){
 		if(place == -1){//If this relation hasn't been used before add one in it
 			place = add_relation(inb,qu->filters[i].rel.rel,store->tables[relnum]->numTuples);	
 		}
-		col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->filters[i].rel.rel);//copy collumn meant to be used as key in the relation key for every tuple
+		if(qu->filters[i].rel.rel != inb->rels[place].keyid || colnum != inb->rels[place].keycol){
+			col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->filters[i].rel.rel);//copy collumn meant to be used as key in the relation key for every tuple
+			inb->rels[place].keyid = qu->filters[i].rel.rel;
+			inb->rels[place].keycol = colnum;
+		}
 		if(qu->filters[i].op == '<')
 			lower_than(inb,place,qu->filters[i].num);
 		if(qu->filters[i].op == '>')
@@ -30,22 +36,42 @@ void query_comp(TableStorage* store,char* tq){
 	int place2;
 	int relnum2,colnum2;
 	for(i=0;i<qu->unum;i++){//Merge and join 
+		//printf("unity %d\n",i);
 		relnum = qu->relation_numbers[qu->unitys[i].rel1.rel];
 		colnum = qu->unitys[i].rel1.col;
 		place = find_place(inb,qu->unitys[i].rel1.rel);
 		if(place == -1){
 			place = add_relation(inb,qu->unitys[i].rel1.rel,store->tables[relnum]->numTuples);	
 		}
-		col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->unitys[i].rel1.rel);
+		if(qu->unitys[i].rel1.rel != inb->rels[place].keyid || colnum != inb->rels[place].keycol){
+			col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->unitys[i].rel1.rel);
+			inb->rels[place].keyid = qu->unitys[i].rel1.rel;
+			inb->rels[place].keycol = colnum;
+		}
 		relnum2 = qu->relation_numbers[qu->unitys[i].rel2.rel];
 		colnum2 = qu->unitys[i].rel2.col;
 		place2 = find_place(inb,qu->unitys[i].rel2.rel);
 		if(place2 == -1){
 			place2 = add_relation(inb,qu->unitys[i].rel2.rel,store->tables[relnum2]->numTuples);	
 		}
-		col_to_key(inb,place2,store->tables[relnum2]->relations[colnum2],qu->unitys[i].rel2.rel);
-		sort(&(inb->rels[place]));
-		sort(&(inb->rels[place2]));
+		if(place == place2){
+			col_to_key2(inb,place2,store->tables[relnum2]->relations[colnum2],qu->unitys[i].rel2.rel);
+			equals(inb,place);
+			continue;
+		}
+		if(qu->unitys[i].rel2.rel != inb->rels[place2].keyid || colnum2 != inb->rels[place2].keycol){
+			col_to_key(inb,place2,store->tables[relnum2]->relations[colnum2],qu->unitys[i].rel2.rel);
+			inb->rels[place2].keyid = qu->unitys[i].rel2.rel;
+			inb->rels[place2].keycol = colnum2;
+		}
+		if(inb->rels[place].sorted == -1){
+			sort(&(inb->rels[place]));
+			inb->rels[place].sorted =0;
+		}
+		if(inb->rels[place2].sorted == -1){
+			sort(&(inb->rels[place2]));
+			inb->rels[place2].sorted =0;
+		}
 		join_rels(inb,place,place2);//joins sorted relations
 	}
 	uint64_t summ,j;
@@ -61,6 +87,34 @@ void query_comp(TableStorage* store,char* tq){
 	}
 	delete_inb(inb);
 	delete_query(qu);
+}
+
+void equals(inbetween* inb,int place){
+	uint64_t i,j;
+	relation temp;
+	temp.num_ids = inb->rels[place].num_ids;
+	temp.ids = (int*)malloc(sizeof(int)*(temp.num_ids));
+	for(i=0;i<inb->rels[place].num_ids;i++)
+		temp.ids[i] = inb->rels[place].ids[i];
+	temp.tuples = (tuple*)malloc(sizeof(tuple)*inb->rels[place].num_tuples);
+	temp.num_tuples =0;
+	for(i=0;i<inb->rels[place].num_tuples;i++){
+		if(inb->rels[place].tuples[i].key == inb->rels[place].tuples[i].key2){
+			temp.tuples[temp.num_tuples].payload = (uint64_t*)malloc(sizeof(uint64_t)*temp.num_ids);
+			temp.tuples[temp.num_tuples].key = inb->rels[place].tuples[i].key;
+			for(j=0;j<inb->rels[place].num_ids;j++)	
+				temp.tuples[temp.num_tuples].payload[j] = inb->rels[place].tuples[i].payload[j];
+			temp.num_tuples++;
+		}
+	}
+	temp.keyid = inb->rels[place].keyid;
+	temp.keycol = inb->rels[place].keycol;
+	temp.sorted = inb->rels[place].sorted;
+	for(i=0;i<inb->rels[place].num_tuples;i++)
+		free(inb->rels[place].tuples[i].payload);
+		free(inb->rels[place].ids);
+		free(inb->rels[place].tuples);
+	inb->rels[place]=temp;
 }
 
 void join_rels(inbetween* inb,int place1,int place2){
@@ -94,6 +148,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 					z++;
 				}
 				temp.tuples[temp.num_tuples].payload = (uint64_t*)malloc(sizeof(uint64_t)*temp.num_ids);
+				temp.tuples[temp.num_tuples].key = inb->rels[place1].tuples[i].key;
 				for(x=0;x<inb->rels[place1].num_ids;x++)
 					temp.tuples[temp.num_tuples].payload[x] = inb->rels[place1].tuples[i].payload[x];
 				for(x=0;x<inb->rels[place2].num_ids;x++)
@@ -103,6 +158,9 @@ void join_rels(inbetween* inb,int place1,int place2){
 				
 		}
 	}
+	temp.keyid = inb->rels[place1].keyid;
+	temp.keycol = inb->rels[place1].keycol;
+	temp.sorted = inb->rels[place1].sorted;
 	for(i=0;i<inb->rels[place1].num_tuples;i++)
 		free(inb->rels[place1].tuples[i].payload);
 		free(inb->rels[place1].ids);
@@ -199,6 +257,18 @@ void col_to_key(inbetween* inb,int place,uint64_t* col,int name){
 	for(j=0;j<inb->rels[place].num_tuples;j++){
 		inb->rels[place].tuples[j].key = col[inb->rels[place].tuples[j].payload[i]];
 	}
+	inb->rels[place].sorted = -1;
+}
+
+void col_to_key2(inbetween* inb,int place,uint64_t* col,int name){
+	int i,j;
+	for(i=0;i<inb->rels[place].num_ids;i++){
+		if(inb->rels[place].ids[i] == name)
+			break;
+	}
+	for(j=0;j<inb->rels[place].num_tuples;j++){
+		inb->rels[place].tuples[j].key2 = col[inb->rels[place].tuples[j].payload[i]];
+	}
 }
 
 int find_place(inbetween* inb,int rel){
@@ -223,6 +293,9 @@ int add_relation(inbetween* inb,int name,uint64_t rows){
 	inb->rels[inb->num].ids = (int*)malloc(sizeof(int));
 	inb->rels[inb->num].ids[0] = name;
 	inb->rels[inb->num].tuples = (tuple*)malloc(sizeof(tuple)*rows);
+	inb->rels[inb->num].sorted = -1;
+	inb->rels[inb->num].keyid = -1;
+	inb->rels[inb->num].keycol = -1;
 	int i;
 	for(i=0;i<rows;i++){
 		inb->rels[inb->num].tuples[i].payload = (uint64_t*)malloc(sizeof(uint64_t));

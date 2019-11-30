@@ -11,6 +11,9 @@
 typedef struct relation {
 	int* ids;
 	int num_ids;
+	int keyid;
+	int keycol;
+	int sorted;
 	tuple *tuples;
 	uint64_t num_tuples;
 } relation;

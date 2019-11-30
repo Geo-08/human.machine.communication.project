@@ -43,11 +43,13 @@ typedef struct query{
 }query;*/
 
 void print_inb(inbetween* inb);
+void equals(inbetween* inb,int place);
 void join_rels(inbetween* inb,int place1,int place2);
 void query_comp(TableStorage* store,char* tq);
 void lower_than (inbetween* inb,int place,uint64_t fil);
 void bigger_than (inbetween* inb,int place,uint64_t fil);
 void equal_to (inbetween* inb,int place,uint64_t fil);
+void col_to_key2(inbetween* inb,int place,uint64_t* col,int name);
 void col_to_key(inbetween* inb,int place,uint64_t* col,int name);
 int find_place(inbetween* inb,int rel);
 int add_relation(inbetween* inb,int name,uint64_t rows);

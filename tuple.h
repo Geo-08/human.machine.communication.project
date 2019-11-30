@@ -5,6 +5,7 @@
 
 typedef struct tuple {
 	uint64_t key;
+	uint64_t key2;
 	uint64_t* payload;
 } tuple;
 
