@@ -1,17 +1,23 @@
 #include "tableStorage.h"
 
 TableStorage* readTables(void) {
-	char fileName[256] ;
+	//char fileName[256] ;
 	Table* table ;
 	TableStorage* tableStorage ;
 	tableStorage=malloc(sizeof(TableStorage)) ;
 	tableStorage->size=0 ;
-	scanf("%s", fileName) ;
-	while (strcmp(fileName, "Done")!=0) {
+	size_t length=100 ;
+	char* fileName=malloc(256*sizeof(char)) ;
+	//scanf("%s", fileName) ;
+	getline(&fileName, &length, stdin) ;
+	while (strcmp(fileName, "Done\n")!=0) {
+		fileName[strlen(fileName)-1]='\0' ;
 		table=readTable(fileName) ;
 		addTable(tableStorage, table) ;
-		scanf("%s", fileName) ;
+		//scanf("%s", fileName) ;
+		getline(&fileName, &length, stdin) ;
 	}
+	free(fileName) ;
 	return tableStorage ;
 }
 
