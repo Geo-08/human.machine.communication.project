@@ -1,16 +1,14 @@
-ALL 		= smj tests main.o SortMergeJoinTests.o CuTest.o relation.o sortmj.o tuple.o
-OBJS 		= main.o relation.o sortmj.o tuple.o
-TESTOBJS 	= SortMergeJoinTests.o CuTest.o relation.o sortmj.o tuple.o
-OUT  		= smj
-TEST  		= test
+ALL 		= project2 script main.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o
+OBJS 		= main.o relation.o sortmj.o tuple.o opperations.o tableStorage.o
+OUT  		= project2
 
 $(OUT): $(OBJS)
 	gcc -o $(OUT) $(OBJS)
 
-$(TEST): $(TESTOBJS)
-	gcc -o $(TEST) $(TESTOBJS)
+script: script.c
+	gcc -o script script.c
 
-all: $(OUT) $(TEST)
+all: $(OUT) script
 
 main.o: main.c
 	gcc -c main.c
@@ -24,11 +22,14 @@ sortmj.o: sortmj.c
 tuple.o: tuple.c
 	gcc -c tuple.c
 
-SortMergeJoinTests.o: SortMergeJoinTests.c
-	gcc -c SortMergeJoinTests.c
-
 CuTest.o: CuTest.c
 	gcc -c CuTest.c
+
+opperations.o: opperations.c
+	gcc -c opperations.c
+
+tableStorage.o: tableStorage.c
+	gcc -c tableStorage.c
 
 clean:
 	rm -f $(ALL)
