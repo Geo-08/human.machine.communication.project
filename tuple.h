@@ -3,6 +3,8 @@
 
 #include <inttypes.h>
 
+#define BITS 16
+
 typedef struct tuple {
 	uint64_t key;
 	uint64_t key2;

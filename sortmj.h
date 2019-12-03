@@ -26,7 +26,7 @@ int radix_sort(relation *rel,relation *rel2,int depth,uint64_t start);
 
 void quicksort (relation *rel,uint64_t low,uint64_t high);
 
-uint64_t partition(relation *rel,int low,int high);
+uint64_t partition(relation *rel,uint64_t low,uint64_t high);
 
 void swap(tuple *a,tuple *b);
 

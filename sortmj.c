@@ -1,5 +1,6 @@
 #include "sortmj.h"
 #include <stdio.h>
+#include <math.h>
 
 int sort(relation *rel){
 	if (rel==NULL || rel->num_tuples==0) {	//if the relation is empty or NULL 
@@ -30,9 +31,11 @@ int sort(relation *rel){
 }
 
 int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call it with depth argument value 0, rel will point at a sorted relation at the end.
-	uint64_t hist[256];
+	//printf("radix_sort depth %d\n",depth);	
+	static int size = pow(2,BITS);
+	uint64_t hist[size];
 	create_hist(rel,hist,depth);
-	uint64_t psum[256]; 
+	uint64_t psum[size]; 
 	create_psum(hist,psum,start);
 	uint64_t i;
 	unsigned int j;
@@ -42,9 +45,10 @@ int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call i
 		psum[j]++;
 	}
 	create_psum(hist,psum,start);
-	for (j=0;j<256;j++){
+	//printf("hi\n");
+	for (j=0;j<size;j++){
 		if(hist[j] !=0){
-			if(hist[j]*16< MAXS || depth == 8){	//checks if the amount of memory the tuples occupy in bucket j is less than 64kb
+			if(hist[j]*16< MAXS || depth == (64/BITS)){	//checks if the amount of memory the tuples occupy in bucket j is less than 64kb
 				isolate(rel2,psum[j],hist[j],rel);	//rel will have only the contents of bucket j
 				quicksort (rel,0,(rel->num_tuples-1)); //rel gets sorted
 				copy_relation (rel2,psum[j],hist[j],rel); //the sorted result is then copied back to rel2 in the corret place
@@ -62,7 +66,7 @@ int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call i
 int create_hist (relation *rel,uint64_t* hist,int n){ //creates hist
 	//int hist[256];
 	int i;
-	for (i = 0; i <256;i++)
+	for (i = 0; i <pow(2,BITS);i++)
 		hist[i] = 0;
 	for (i = 0; i < rel->num_tuples; i++){
 		uint64_t j = n_first_bytes_num (rel->tuples[i],n);
@@ -75,7 +79,7 @@ int create_psum (uint64_t *hist,uint64_t* psum,uint64_t start){ //creates psum
 	//int psum[256];
 	int i;
 	psum[0] = start;
-	for (i = 1; i<256;i++)
+	for (i = 1; i<pow(2,BITS);i++)
 		psum[i] = psum[i-1] + hist[i-1];
 	return 0;
 
@@ -187,8 +191,10 @@ buffer* SortMergeJoin(relation* relR, relation* relS) {
 
 
 void quicksort (relation *rel,uint64_t low,uint64_t high){
+	//printf("yes it's quickort\n");
 	if (low < high){
 		uint64_t q;
+		//printf("%" PRIu64" " "%" PRIu64" ""\n",low,high);
 		q = partition(rel,low,high);
 		if(q !=0) //avoiding q-1 to give us a number larger than 0 and thus a segmentation fault
 			quicksort(rel,low,q-1);
@@ -197,7 +203,8 @@ void quicksort (relation *rel,uint64_t low,uint64_t high){
 	}
 }
 
-uint64_t partition(relation *rel,int low,int high){
+uint64_t partition(relation *rel,uint64_t low,uint64_t high){
+	//printf("please...\n");
 	uint64_t pivot = rel->tuples[high].key;
 	uint64_t i = low;
 	uint64_t j;
