@@ -6,7 +6,7 @@ int gcounter =0;
 
 uint64_t* query_comp(TableStorage* store,char* tq){
 	//printf("Query %d\n",gcounter);
-	gcounter++;
+	//gcounter++;
 	query* qu;
 	query_init(&qu);
 	read_query(qu,tq);
@@ -15,6 +15,7 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 	int i,place;
 	int relnum,colnum;
 	for(i=0;i<qu->fnum;i++){//Calculate filter predicates and save them in inbetween structure 
+		//printf("filter %d\n",i);
 		relnum = qu->relation_numbers[qu->filters[i].rel.rel];
 		colnum = qu->filters[i].rel.col;
 		place = find_place(inb,qu->filters[i].rel.rel);
@@ -65,13 +66,18 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 			inb->rels[place2].keycol = colnum2;
 		}
 		if(inb->rels[place].sorted == -1){
+			//printf("sorting %d\n",place);
 			sort(&(inb->rels[place]));
+			//printf("done sorting \n");
 			inb->rels[place].sorted =0;
 		}
 		if(inb->rels[place2].sorted == -1){
+			//printf("sorting %d\n",place2);
 			sort(&(inb->rels[place2]));
+			//printf("done sorting\n");
 			inb->rels[place2].sorted =0;
 		}
+		//printf("join rels should start\n");
 		join_rels(inb,place,place2);//joins sorted relations
 	}
 	uint64_t summ,j;
@@ -92,13 +98,18 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 			printf("%" PRIu64" ",summ);		 
 	}
 	printf("\n");
+	//printf("you are here aren't you?\n");
 	delete_inb(inb);
+	//printf("hi\n");
 	delete_query(qu);
+	//printf("hello\n");
 	free(out);
+	//printf("???\n");
 	//return out;
 }
 
 void equals(inbetween* inb,int place){
+	//printf("equals\n");
 	uint64_t i,j;
 	relation temp;
 	temp.num_ids = inb->rels[place].num_ids;
@@ -125,9 +136,11 @@ void equals(inbetween* inb,int place){
 		free(inb->rels[place].ids);
 		free(inb->rels[place].tuples);
 	inb->rels[place]=temp;
+	//printf("exiting equals\n");
 }
 
 void join_rels(inbetween* inb,int place1,int place2){
+	//printf("join rels\n");
 	uint64_t i,j,size,ms,z,x,flag;
 	if(inb->rels[place1].num_tuples >  inb->rels[place2].num_tuples)
 		size = inb->rels[place1].num_tuples;
@@ -183,6 +196,34 @@ void join_rels(inbetween* inb,int place1,int place2){
 	inb->num--;
 	i=0;
 	flag =0;
+	relation* temps;
+	temps = (relation*)malloc(sizeof(relation)*inb->num);
+	for(i=0;i<inb->num;i++){
+		if(flag == 2){
+			temps[i] = inb->rels[i+1];
+		}
+		if(flag ==0){
+			if(i == place1 || i == place2){
+				temps[i] = temp;
+				flag++;
+			}
+			else
+				temps[i] = inb->rels[i];
+		}
+		else if(flag == 1){
+			if(i == place1 || i == place2){
+				temps[i] = inb->rels[i+1];
+				flag++;
+				continue;
+			}
+			else
+				temps[i] = inb->rels[i];
+		}
+	}
+	free(inb->rels);
+	inb->rels = temps;
+	//printf("exiting join rels\n");
+	/*
 	while(i < inb->num){
 		if(flag == 1){
 			inb->rels[i] = inb->rels[i+1];
@@ -196,7 +237,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 				inb->rels[i] = inb->rels[i+1];
 		}
 		i++;
-	}
+	}*/
 }
 
 void lower_than (inbetween* inb,int place,uint64_t fil){
@@ -287,8 +328,9 @@ int find_place(inbetween* inb,int rel){
 	int j;
 	for(i=0;i<inb->num;i++){
 		for(j=0;j<inb->rels[i].num_ids;j++){
-			if (rel == inb->rels[i].ids[j])
+			if (rel == inb->rels[i].ids[j]){
 				return i;
+			}
 		}
 	}
 	return -1;
@@ -307,7 +349,7 @@ int add_relation(inbetween* inb,int name,uint64_t rows){
 	inb->rels[inb->num].sorted = -1;
 	inb->rels[inb->num].keyid = -1;
 	inb->rels[inb->num].keycol = -1;
-	int i;
+	uint64_t i;
 	for(i=0;i<rows;i++){
 		inb->rels[inb->num].tuples[i].payload = (uint64_t*)malloc(sizeof(uint64_t));
 		inb->rels[inb->num].tuples[i].payload[0] = i;
@@ -407,7 +449,7 @@ void read_query(query* qu,char* tq){//Parsing the string tq to save the info in 
 			}
 			if(tq[i] == '&' || tq[i] == '|'){
 				if(flag == 0){//predicate wasn't a unity
-					tempf.num = atoi(buffer);
+					tempf.num = strtoul(buffer,NULL,10);
 					if(qu->fnum == 0)
 						qu->filters = (filter*)malloc(sizeof(filter));
 					else
@@ -472,7 +514,7 @@ void read_query(query* qu,char* tq){//Parsing the string tq to save the info in 
 }
 
 
-void print_query(query* qu){//printing the query structure
+/*void print_query(query* qu){//printing the query structure
 	int i;
 	printf("Printing relation numbers\n");
 	for(i=0;i<qu->rnum;i++){
@@ -492,7 +534,7 @@ void print_query(query* qu){//printing the query structure
 	for(i=0;i<qu->snum;i++){
 		printf("%d.%d\n",qu->sums[i].rel,qu->sums[i].col);
 	}
-}
+}*/
 
 void delete_query(query* qu){
 	free(qu->relation_numbers);

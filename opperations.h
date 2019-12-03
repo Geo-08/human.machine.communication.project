@@ -16,7 +16,7 @@ typedef struct relation_collumn{
 typedef struct filter{ 
 	relation_collumn rel;
 	char op;
-	int num;
+	uint64_t num;
 }filter;
 
 typedef struct unity{
@@ -58,5 +58,5 @@ void delete_inb(inbetween* inb);
 
 void query_init(query** qu);
 void read_query(query* qu,char* tq);
-void print_query(query* qu);
+//void print_query(query* qu);
 void delete_query(query* qu);
