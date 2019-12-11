@@ -1,10 +1,10 @@
-ALL 		= project2 script main.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o Tests.o
+ALL 		= project2 script cmp main.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o Tests.o
 OBJS 		= main.o relation.o sortmj.o tuple.o opperations.o tableStorage.o
 TESTOBJS 	= Tests.o CuTest.o relation.o sortmj.o tuple.o opperations.o
 OUT  		= project2
 TEST  		= test
 
-$(OUT): $(OBJS) $(TEST) script
+$(OUT): $(OBJS) $(TEST) script cmp
 	gcc -o $(OUT) $(OBJS)
 	./test
 
@@ -13,6 +13,9 @@ $(TEST): $(TESTOBJS)
 
 script: script.c
 	gcc -o script script.c
+	
+cmp: compareResults.c
+	gcc -o cmp compareResults.c
 
 all: $(OUT) script $(TEST)
 
