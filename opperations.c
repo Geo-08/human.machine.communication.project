@@ -8,6 +8,7 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 	query* qu;
 	query_init(&qu);
 	read_query(qu,tq);
+	optimise_query(qu) ;
 	inbetween* inb;
 	inb_init(&inb);
 	int i,place;
@@ -95,8 +96,8 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 	delete_inb(inb);
 	delete_query(qu);
 	//in case there is a need for the function to actually return the results, comment free(out); and remove comment from return out; out should be freed out of the function if that happens.
-	free(out);
-	//return out;
+	//free(out);
+	return out;
 }
 
 void equals(inbetween* inb,int place){
@@ -484,6 +485,47 @@ void read_query(query* qu,char* tq){//Parsing the string tq to save the info in 
 	qu->snum++;
 }
 
+void optimise_query(query* qu) {
+	int i, j, size1=0, size2=0 ;
+	int queries1[qu->unum] ;
+	int queries2[qu->unum] ;
+	for (i=0 ; i<qu->unum ; i++) {
+		for (j=i+1 ; j<qu->unum ; j++) {
+			if ((qu->unitys[i].rel1.rel==qu->unitys[j].rel1.rel && qu->unitys[i].rel1.col==qu->unitys[j].rel1.col) ||
+				(qu->unitys[i].rel1.rel==qu->unitys[j].rel2.rel && qu->unitys[i].rel1.col==qu->unitys[j].rel2.col)) {
+					queries1[size1]=j ;
+					size1++ ;
+				}
+			if ((qu->unitys[i].rel2.rel==qu->unitys[j].rel1.rel && qu->unitys[i].rel2.col==qu->unitys[j].rel1.col) ||
+				(qu->unitys[i].rel2.rel==qu->unitys[j].rel2.rel && qu->unitys[i].rel2.col==qu->unitys[j].rel2.col)) {
+					queries2[size2]=j ;
+					size2++ ;
+				}	
+		}
+		if (size2>size1) {
+			for (j=0 ; j<size2 ; j++) {
+				query_swap(&(qu->unitys[i+j+1]), &(qu->unitys[queries2[j]])) ;
+			}
+		}
+		else {
+			for (j=0 ; j<size1 ; j++) {
+				query_swap(&(qu->unitys[i+j+1]), &(qu->unitys[queries1[j]])) ;
+			}
+		}
+		size1=0 ;
+		size2=0 ;
+	}
+}
+
+void query_swap(unity* a, unity* b) {
+	unity u ;
+	u.rel1 = a->rel1;
+	u.rel2 = a->rel2;
+	a->rel1=b->rel1 ;
+	a->rel2=b->rel2 ;
+	b->rel1=u.rel1 ;
+	b->rel2=u.rel2 ;
+}
 
 /*void print_query(query* qu){//printing the query structure
 	int i;
