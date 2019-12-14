@@ -15,14 +15,15 @@ int main(int argc, char** argv) {
 	int flag=0 ;
 	char* actual=malloc(100*sizeof(char)) ;
 	char* expected=malloc(100*sizeof(char)) ;
+	char* time=malloc(100*sizeof(char)) ;
 	FILE* file ;
 	file=fopen(fileName, "r") ;
 	if (!file) {
 		printf("Can't open file %s.\n", fileName) ;
 		return -1 ;
 	}
-	while (getline(&actual, &length, stdin)!=-1) {
-		getline(&expected, &length, file) ;
+	while (getline(&expected, &length, file)!=-1) {
+		getline(&actual, &length, stdin) ;
 		expected[strlen(expected)-1]=' ' ;
 		strcat(expected, "\n") ;
 		if (strcmp(actual, expected)!=0) {
@@ -36,5 +37,8 @@ int main(int argc, char** argv) {
 	fclose(file) ;
 	free(actual) ;
 	free(expected) ;
+	getline(&time, &length, stdin) ;
+	printf("%s", time) ;
+	free(time) ;
 	return 0 ;
 }
