@@ -2,11 +2,9 @@
 #include <string.h>
 #include <stdio.h>
 
-int gcounter =0;
+//int gcounter =0;
 
 uint64_t* query_comp(TableStorage* store,char* tq){
-	//printf("Query %d\n",gcounter);
-	//gcounter++;
 	query* qu;
 	query_init(&qu);
 	read_query(qu,tq);
@@ -15,18 +13,18 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 	int i,place;
 	int relnum,colnum;
 	for(i=0;i<qu->fnum;i++){//Calculate filter predicates and save them in inbetween structure 
-		//printf("filter %d\n",i);
 		relnum = qu->relation_numbers[qu->filters[i].rel.rel];
 		colnum = qu->filters[i].rel.col;
 		place = find_place(inb,qu->filters[i].rel.rel);
 		if(place == -1){//If this relation hasn't been used before add one in it
 			place = add_relation(inb,qu->filters[i].rel.rel,store->tables[relnum]->numTuples);	
 		}
-		if(qu->filters[i].rel.rel != inb->rels[place].keyid || colnum != inb->rels[place].keycol){
+		if(qu->filters[i].rel.rel != inb->rels[place].keyid || colnum != inb->rels[place].keycol){//Checking if the relation has used the collumn as a key before
 			col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->filters[i].rel.rel);//copy collumn meant to be used as key in the relation key for every tuple
 			inb->rels[place].keyid = qu->filters[i].rel.rel;
 			inb->rels[place].keycol = colnum;
 		}
+		//Filter is executed
 		if(qu->filters[i].op == '<')
 			lower_than(inb,place,qu->filters[i].num);
 		if(qu->filters[i].op == '>')
@@ -41,23 +39,23 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 		relnum = qu->relation_numbers[qu->unitys[i].rel1.rel];
 		colnum = qu->unitys[i].rel1.col;
 		place = find_place(inb,qu->unitys[i].rel1.rel);
-		if(place == -1){
-			place = add_relation(inb,qu->unitys[i].rel1.rel,store->tables[relnum]->numTuples);	
+		if(place == -1){//If the first relation to take part isn't in the inbetween results 
+			place = add_relation(inb,qu->unitys[i].rel1.rel,store->tables[relnum]->numTuples);//add it	
 		}
-		if(qu->unitys[i].rel1.rel != inb->rels[place].keyid || colnum != inb->rels[place].keycol){
-			col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->unitys[i].rel1.rel);
+		if(qu->unitys[i].rel1.rel != inb->rels[place].keyid || colnum != inb->rels[place].keycol){//checking if the collumn of the relation has been used before as a key.
+			col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->unitys[i].rel1.rel);//copy contents of the collumn as a key.
 			inb->rels[place].keyid = qu->unitys[i].rel1.rel;
 			inb->rels[place].keycol = colnum;
 		}
 		relnum2 = qu->relation_numbers[qu->unitys[i].rel2.rel];
 		colnum2 = qu->unitys[i].rel2.col;
 		place2 = find_place(inb,qu->unitys[i].rel2.rel);
-		if(place2 == -1){
+		if(place2 == -1){//If the second relation to take part isn't in the inbetween results
 			place2 = add_relation(inb,qu->unitys[i].rel2.rel,store->tables[relnum2]->numTuples);	
 		}
-		if(place == place2){
-			col_to_key2(inb,place2,store->tables[relnum2]->relations[colnum2],qu->unitys[i].rel2.rel);
-			equals(inb,place);
+		if(place == place2){//if both relations are in the same inbetween result relation, could mean they are the same.
+			col_to_key2(inb,place2,store->tables[relnum2]->relations[colnum2],qu->unitys[i].rel2.rel);//copy collumn of second relation to key2.
+			equals(inb,place);//do the filtering.
 			continue;
 		}
 		if(qu->unitys[i].rel2.rel != inb->rels[place2].keyid || colnum2 != inb->rels[place2].keycol){
@@ -65,16 +63,12 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 			inb->rels[place2].keyid = qu->unitys[i].rel2.rel;
 			inb->rels[place2].keycol = colnum2;
 		}
-		if(inb->rels[place].sorted == -1){
-			//printf("sorting %d\n",place);
+		if(inb->rels[place].sorted == -1){//Checking if the first relation has been already sorted by it's key
 			sort(&(inb->rels[place]));
-			//printf("done sorting \n");
 			inb->rels[place].sorted =0;
 		}
-		if(inb->rels[place2].sorted == -1){
-			//printf("sorting %d\n",place2);
+		if(inb->rels[place2].sorted == -1){//Same for the other.
 			sort(&(inb->rels[place2]));
-			//printf("done sorting\n");
 			inb->rels[place2].sorted =0;
 		}
 		//printf("join rels should start\n");
@@ -98,18 +92,14 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 			printf("%" PRIu64" ",summ);		 
 	}
 	printf("\n");
-	//printf("you are here aren't you?\n");
 	delete_inb(inb);
-	//printf("hi\n");
 	delete_query(qu);
-	//printf("hello\n");
+	//in case there is a need for the function to actually return the results, comment free(out); and remove comment from return out; out should be freed out of the function if that happens.
 	free(out);
-	//printf("???\n");
 	//return out;
 }
 
 void equals(inbetween* inb,int place){
-	//printf("equals\n");
 	uint64_t i,j;
 	relation temp;
 	temp.num_ids = inb->rels[place].num_ids;
@@ -140,7 +130,6 @@ void equals(inbetween* inb,int place){
 }
 
 void join_rels(inbetween* inb,int place1,int place2){
-	//printf("join rels\n");
 	uint64_t i,j,size,ms,z,x,flag;
 	if(inb->rels[place1].num_tuples >  inb->rels[place2].num_tuples)
 		size = inb->rels[place1].num_tuples;
@@ -222,22 +211,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 	}
 	free(inb->rels);
 	inb->rels = temps;
-	//printf("exiting join rels\n");
-	/*
-	while(i < inb->num){
-		if(flag == 1){
-			inb->rels[i] = inb->rels[i+1];
-		}
-		if(i == place1 || i == place2){
-			if(flag == 0){
-				flag++;
-				inb->rels[i] = temp;
-			}
-			else
-				inb->rels[i] = inb->rels[i+1];
-		}
-		i++;
-	}*/
+
 }
 
 void lower_than (inbetween* inb,int place,uint64_t fil){
@@ -455,9 +429,6 @@ void read_query(query* qu,char* tq){//Parsing the string tq to save the info in 
 					else
 						qu->filters = (filter*)realloc(qu->filters,(sizeof(filter)*(qu->fnum+1)));
 					qu->filters[qu->fnum] = tempf;
-					/*qu->filters[qu->fnum].op = tempf.op;
-					printf("%c\n",qu->filters[qu->fnum].op);
-					printf("%d,%d\n",tempf.num,qu->filters[qu->fnum].num);*/
 					qu->fnum++;
 				}
 				if(flag == 1){//means that the predicate was a unity

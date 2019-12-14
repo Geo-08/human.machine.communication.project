@@ -1,6 +1,4 @@
 #include "sortmj.h"
-//#include "list.h"
-//#include "relation.h"
 #include "tableStorage.h"
 
 typedef struct inbetween{
@@ -35,12 +33,6 @@ typedef struct query{
 	int snum;
 }query;
 
-/*typedef struct query{
-	list* relation_numbers;
-	list* filters;
-	list* unitys;
-	list* relations_collumns;
-}query;*/
 
 void print_inb(inbetween* inb);
 void equals(inbetween* inb,int place);
