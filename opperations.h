@@ -50,5 +50,7 @@ void delete_inb(inbetween* inb);
 
 void query_init(query** qu);
 void read_query(query* qu,char* tq);
+void optimise_query(query* qu) ;
+void query_swap(unity* a, unity* b) ;
 //void print_query(query* qu);
 void delete_query(query* qu);
