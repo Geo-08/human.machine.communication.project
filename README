@@ -1,5 +1,29 @@
-The following is an explanation of the functions that were used to implement radix sort and generally the sorting part of the project.
-The structs we will be working with are tuple which are comprised by 2 unsigned 64 bit integers and relation which are an array of tuples and an unsigned 64 bit integer holding the number of tuples in the array.
+The following is an explanation of the functions that were used to implement radix sort and generally the sorting part of the project,expanded to include query computation.
+The structs we will be working with are tuple which are comprised by
+unsigned 64 bit integer (key), another unsigned 64 bit integer (key2)  and
+an array of unsigned 64 bit integers payload.
+
+relation which are an array of tuples and an unsigned 64 bit integer holding the number of tuples in the array, an array of integers showing which relation tables are part of the relation, an integer holding their number,3 integers holding information of which relation the key originates from, which collumn, as well as if the relation is sorted in regards to the key.
+
+inbetween which is an array of relations and an integer keeping their number.
+
+relation_collumn, which is an integer to indicate a relation and an integer to indicate a collumn in the relation
+
+filter, which is relation_column, a character to indicate the opperation, and an unsigned 64 bit integer for the number which will be used for filtering.
+
+unity, has 2 relation_collumns, information for merge join predicates.
+
+query, arrays of integers, filters, unitys and relation_collumns as well as integers keeping the number of each are used to store a query.
+
+
+void read_query(query* qu,char* tq)
+parses the string tq and stores it as a query which qu points at at the end.
+
+uint64_t* query_comp(TableStorage* store,char* tq)
+computes the query pointed by tq, store is the table where the relation tables are stored.
+Predicates are executed starting from filters, moving on to merge join and finally calculating the sums.
+Every time a relation table is requested it's first searched on the inbetween structure of relation arrays, if it's not found it's added in it, then opperations are done upon it. During merge join assuming they aren't the same relation or haven't been merged before, they will both be added in the inbetween structure sorted and merged, in which the result will be saved in a new relation in the inbetween structure and the two relations will be removed from it.
+
 
 int sort(relation *rel)
 sort sorts the relation that is pointed by rel and by the end it points to a sorted relation.
@@ -15,6 +39,7 @@ Then it runs through every "bucket" as recognized by the histogram and checks we
 Otherwise the contents of the "bucket" will be copied again to rel and radix_sort will be called again with depth incremented by one and start taking the value of where the "bucket" starts in rel2.
 Eventually rel2 becomes sorted.
 returns 0 on success.
+NOTE: Changes have been made so that the number of bits from the key used for the histograms and other functions can be changed, in order to change it switch the define value in tuple.h file. 
 
 uint64_t** readArray(char* fileName, int* columns, int* rows, int* key)
 creates a 2D array based on the data of fileName. The file must contain in order the size of columns and rows, the key, then the data.
