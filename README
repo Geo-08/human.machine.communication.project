@@ -1,3 +1,18 @@
+To run the program successfully, the small or medium directory must be in the same directory as the executable.
+This project contains two others executables that assists the main executable, the first one reads the information in the small or medium directory and pass it to the main, while
+the second compares the results printed by the main executable with the result file.
+The first executable is necessary, but the second is optional.
+Some shortcuts for the execution of project2:
+
+make run_small: ./script small | ./project2
+make run_small_cmp: ./script small | ./project2 | ./cmp small
+make run_medium: ./script medium | ./project2
+make run_medium_cmp: ./script medium | ./project2 | ./cmp medium
+
+Total time for the execution
+small:Around 5 seconds
+medium:Around
+
 The following is an explanation of the functions that were used to implement radix sort and generally the sorting part of the project,expanded to include query computation.
 The structs we will be working with are tuple which are comprised by
 unsigned 64 bit integer (key), another unsigned 64 bit integer (key2)  and
@@ -5,7 +20,9 @@ an array of unsigned 64 bit integers payload.
 
 relation which are an array of tuples and an unsigned 64 bit integer holding the number of tuples in the array, an array of integers showing which relation tables are part of the relation, an integer holding their number,3 integers holding information of which relation the key originates from, which collumn, as well as if the relation is sorted in regards to the key.
 
-inbetween which is an array of relations and an integer keeping their number.
+tableStorage, which is a array of Tables, a Table is a 2D array of uint64_t sized numbers.
+
+inbetween, which is an array of relations and an integer keeping their number.
 
 relation_collumn, which is an integer to indicate a relation and an integer to indicate a collumn in the relation
 
