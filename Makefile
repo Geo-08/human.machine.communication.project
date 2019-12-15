@@ -1,6 +1,6 @@
 ALL 		= project2 script cmp main.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o Tests.o
 OBJS 		= main.o relation.o sortmj.o tuple.o opperations.o tableStorage.o
-TESTOBJS 	= Tests.o CuTest.o relation.o sortmj.o tuple.o opperations.o
+TESTOBJS 	= Tests.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o
 OUT  		= project2
 TEST  		= test
 
@@ -27,7 +27,7 @@ relation.o: relation.c
 	gcc -c relation.c
 
 sortmj.o: sortmj.c
-	gcc -c sortmj.c
+	gcc -c sortmj.c -lm
 
 tuple.o: tuple.c
 	gcc -c tuple.c
@@ -43,6 +43,18 @@ tableStorage.o: tableStorage.c
 
 Tests.o: Tests.c
 	gcc -c Tests.c
+
+run_small: $(OUT)
+	./script small | ./project2
+
+run_small_cmp: $(OUT)
+	./script small | ./project2 | ./cmp small
+
+run_medium: $(OUT)
+	./script medium | ./project2
+
+run_medium_cmp: $(OUT)
+	./script medium | ./project2 | ./cmp medium
 
 clean:
 	rm -f $(ALL)
