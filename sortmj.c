@@ -31,7 +31,7 @@ int sort(relation *rel){
 }
 
 int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call it with depth argument value 0, rel will point at a sorted relation at the end.	
-	static int size = pow(2,BITS);
+	int size = pow(2,BITS);
 	uint64_t hist[size];
 	create_hist(rel,hist,depth);
 	uint64_t psum[size]; 
