@@ -11,7 +11,10 @@ make run_medium_cmp: ./script medium | ./project2 | ./cmp medium
 
 Total time for the execution
 small:Around 5 seconds
-medium:Around
+medium:Around 286 seconds, a little less than 5 minutes
+
+medium was tested on a system with 8GB, due to query "7 7 0|0.1=1.2&1.2=2.0&1.0>11263845|0.2 2.0" causing a swap to disk to occure it was ommited from the test
+
 
 The following is an explanation of the functions that were used to implement radix sort and generally the sorting part of the project,expanded to include query computation.
 The structs we will be working with are tuple which are comprised by
