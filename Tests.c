@@ -6,8 +6,9 @@
 #include "relation.h"
 #include "sortmj.h"
 #include "opperations.h"
+#include "tableStorage.h"
 
-CuSuite* CuGetSuite_filters() ;
+CuSuite* CuGetSuite_opperations() ;
 void Test_lower_thanOnePass(CuTest*) ;
 void Test_lower_thanAllPass(CuTest*) ;
 void Test_bigger_thanOnePass(CuTest*) ;
@@ -20,7 +21,6 @@ void Test_add_relationEnd(CuTest*) ;
 void Test_add_relationEmpty(CuTest*) ;
 
 void Test_col_to_keyFound(CuTest*) ;
-void Test_col_to_keyNotFound(CuTest*) ;
 
 void Test_find_placeFound(CuTest*) ;
 void Test_find_placeNotFound(CuTest*) ;
@@ -34,13 +34,16 @@ void Test_equalsSmall(CuTest*) ;
 void Test_equalsNoCommon(CuTest*) ;
 
 void Test_read_querySmall(CuTest*) ;
-void Test_read_queryError(CuTest*) ;
+
+void Test_query_compSmall(CuTest*) ;
+void Test_query_compNULL(CuTest*) ;
+
 
 void RunAllTests(void) {
 	CuString *output = CuStringNew();
 	CuSuite* suite = CuSuiteNew();
 
-	CuSuiteAddSuite(suite, CuGetSuite_filters());
+	CuSuiteAddSuite(suite, CuGetSuite_opperations());
 
 	CuSuiteRun(suite);
 	CuSuiteSummary(suite, output);
@@ -52,7 +55,7 @@ int main(void) {
 	RunAllTests();
 }
 
-CuSuite* CuGetSuite_filters(void)
+CuSuite* CuGetSuite_opperations(void)
 {
 	CuSuite* suite = CuSuiteNew() ;
 
@@ -68,7 +71,6 @@ CuSuite* CuGetSuite_filters(void)
 	SUITE_ADD_TEST(suite, Test_add_relationEmpty) ;
 	
 	SUITE_ADD_TEST(suite, Test_col_to_keyFound) ;
-	//SUITE_ADD_TEST(suite, Test_col_to_keyNotFound) ;
 	
 	SUITE_ADD_TEST(suite, Test_find_placeFound) ;
 	SUITE_ADD_TEST(suite, Test_find_placeNotFound) ;
@@ -82,7 +84,9 @@ CuSuite* CuGetSuite_filters(void)
 	SUITE_ADD_TEST(suite, Test_equalsNoCommon) ;
 	
 	SUITE_ADD_TEST(suite, Test_read_querySmall) ;
-	//SUITE_ADD_TEST(suite, Test_read_queryError) ;
+	
+	SUITE_ADD_TEST(suite, Test_query_compSmall) ;
+	SUITE_ADD_TEST(suite, Test_query_compNULL) ;
 	return suite;
 }
 
@@ -225,18 +229,6 @@ void Test_col_to_keyFound(CuTest* tc) {
 	CuAssertIntEquals(tc,5,actual->rels[0].tuples[1].key) ;
 	delete_inb(actual) ;
 }
-
-/*void Test_col_to_keyNotFound(CuTest* tc) {
-	inbetween* actual ;
-	inb_init(&actual) ;
-	uint64_t rows=2 ;
-	add_relation(actual, 0, rows) ;
-	uint64_t col[3] ;
-	col[0]=3 ;
-	col[1]=5 ;
-	col_to_key(actual, 0, col, 1) ;
-	delete_inb(actual) ;
-}*/
 
 void Test_find_placeFound(CuTest* tc) {
 	inbetween* actual ;
@@ -431,11 +423,56 @@ void Test_read_querySmall(CuTest* tc) {
 	delete_query(qu) ;
 }
 
-/*void Test_read_queryError(CuTest* tc) {
-	char queryString[100] ;
-	strcpy(queryString, "5 1 2|0.1==2.2&0.0>5&0.2=1.0|0.1 1.0\n") ;
-	query* qu ;
-	query_init(&qu) ;
-	read_query(qu,queryString) ;
-	delete_query(qu) ;
-}*/
+void Test_query_compSmall(CuTest* tc) {
+	TableStorage* tableStorage ;
+	tableStorage=malloc(sizeof(TableStorage)) ;
+	tableStorage->size=0 ;
+	Table* table1=createTable(2, 3) ;
+	table1->relations[0][0]= 0 ;
+	table1->relations[0][1]= 1 ;
+	table1->relations[0][2]= 2 ;
+	table1->relations[1][0]= 2 ;
+	table1->relations[1][1]= 3 ;
+	table1->relations[1][2]= 4 ;
+	Table* table2=createTable(2, 3) ;
+	table2->relations[0][0]= 0 ;
+	table2->relations[0][1]= 1 ;
+	table2->relations[0][2]= 6 ;
+	table2->relations[1][0]= 2 ;
+	table2->relations[1][1]= 3 ;
+	table2->relations[1][2]= 5 ;
+	addTable(tableStorage, table1) ;
+	addTable(tableStorage, table2) ;
+	uint64_t* out=query_comp(tableStorage, "1 0|0.1=1.1&0.1>2|0.0 1.1") ;
+	CuAssertIntEquals(tc, 1, out[0]) ;
+	CuAssertIntEquals(tc, 3, out[1]) ;	
+	free(out) ;
+	deleteTableStorage(tableStorage) ;
+}
+
+void Test_query_compNULL(CuTest* tc) {
+	TableStorage* tableStorage ;
+	tableStorage=malloc(sizeof(TableStorage)) ;
+	tableStorage->size=0 ;
+	Table* table1=createTable(2, 3) ;
+	table1->relations[0][0]= 0 ;
+	table1->relations[0][1]= 1 ;
+	table1->relations[0][2]= 2 ;
+	table1->relations[1][0]= 2 ;
+	table1->relations[1][1]= 7 ;
+	table1->relations[1][2]= 4 ;
+	Table* table2=createTable(2, 3) ;
+	table2->relations[0][0]= 0 ;
+	table2->relations[0][1]= 1 ;
+	table2->relations[0][2]= 6 ;
+	table2->relations[1][0]= 2 ;
+	table2->relations[1][1]= 3 ;
+	table2->relations[1][2]= 5 ;
+	addTable(tableStorage, table1) ;
+	addTable(tableStorage, table2) ;
+	uint64_t* out=query_comp(tableStorage, "1 0|0.1=1.1&0.1>2|0.0 1.1") ;
+	CuAssertIntEquals(tc, 0, out[0]) ;
+	CuAssertIntEquals(tc, 0, out[1]) ;	
+	free(out) ;
+	deleteTableStorage(tableStorage) ;
+}
