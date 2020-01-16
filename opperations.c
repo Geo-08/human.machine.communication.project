@@ -8,7 +8,7 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 	query* qu;
 	query_init(&qu);
 	read_query(qu,tq);
-	optimise_query(qu) ;
+	//optimise_query(qu) ;
 	inbetween* inb;
 	inb_init(&inb);
 	int i,place;
@@ -131,11 +131,12 @@ void equals(inbetween* inb,int place){
 }
 
 void join_rels(inbetween* inb,int place1,int place2){
-	uint64_t i,j,size,ms,z,x,flag;
+	uint64_t i,j,size,ts,ms,z,x,flag;
 	if(inb->rels[place1].num_tuples >  inb->rels[place2].num_tuples)
-		size = inb->rels[place1].num_tuples;
-	else
 		size = inb->rels[place2].num_tuples;
+	else
+		size = inb->rels[place1].num_tuples;
+	ts = size/2;
 	relation temp;
 	temp.num_ids = inb->rels[place1].num_ids + inb->rels[place2].num_ids;
 	temp.ids = (int*)malloc(sizeof(int)*(temp.num_ids));
@@ -143,10 +144,12 @@ void join_rels(inbetween* inb,int place1,int place2){
 		temp.ids[i] = inb->rels[place1].ids[i];
 	for(i=0;i<inb->rels[place2].num_ids;i++)
 		temp.ids[i+inb->rels[place1].num_ids] = inb->rels[place2].ids[i];
-	temp.tuples = (tuple*)malloc(sizeof(tuple)*size);
+	//temp.tuples = (tuple*)malloc(sizeof(tuple)*size);
+	temp.tuples = (tuple*)malloc(1000000);
+	//temp.tuples = (tuple*)malloc(sizeof(tuple));
 	temp.num_tuples = 0;
 	ms=0;
-	z=2;
+	z=1;
 	for(i=0;i<inb->rels[place1].num_tuples;i++){
 		for(j=ms;j<inb->rels[place2].num_tuples;j++){
 			if(inb->rels[place1].tuples[i].key < inb->rels[place2].tuples[j].key)
@@ -157,10 +160,34 @@ void join_rels(inbetween* inb,int place1,int place2){
 				continue;	
 			}
 			if(inb->rels[place1].tuples[i].key == inb->rels[place2].tuples[j].key){
-				if(temp.num_tuples == size*(z-1)){
+				if((temp.num_tuples+1) * sizeof(tuple) > z*1000000){
+					z++;
+					temp.tuples =(tuple*)realloc(temp.tuples,1000000*z);
+				}
+				/*if(temp.num_tuples == size*(z-1)){
+					/*size = size + ts;
+					printf("%" PRIu64" ",size);
+					printf("%" PRIu64" ",ts);
 					temp.tuples =(tuple*)realloc(temp.tuples,sizeof(tuple)*size*z);
 					z++;
 				}
+				/*if(temp.num_tuples == (size+((z-1)*ts)) ){
+					/*size = size + ts;
+					printf("%" PRIu64" ",size);
+					printf("%" PRIu64" ",ts);
+					//temp.tuples =(tuple*)realloc(temp.tuples,sizeof(tuple)*(size+(ts*z)) );
+					if ((temp.tuples =(tuple*)realloc(temp.tuples,sizeof(tuple)*(size+(ts*z)) )) == NULL){
+					   perror("socket failed");
+					   exit(EXIT_FAILURE);
+					}
+					z++;
+				}*/
+				/*if(temp.num_tuples == 41665*z){
+					temp.tuples =(tuple*)realloc(temp.tuples,1000000*z);
+					z++;
+				}*/
+				//if (temp.num_tuples>0)
+					//temp.tuples = (tuple*)realloc(temp.tuples,sizeof(tuple)*(temp.num_tuples+1));
 				temp.tuples[temp.num_tuples].payload = (uint64_t*)malloc(sizeof(uint64_t)*temp.num_ids);
 				temp.tuples[temp.num_tuples].key = inb->rels[place1].tuples[i].key;
 				for(x=0;x<inb->rels[place1].num_ids;x++)
@@ -548,6 +575,8 @@ void query_swap(unity* a, unity* b) {
 		printf("%d.%d\n",qu->sums[i].rel,qu->sums[i].col);
 	}
 }*/
+
+
 
 void delete_query(query* qu){
 	free(qu->relation_numbers);

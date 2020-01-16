@@ -1,3 +1,6 @@
+#ifndef OPPERATIONS_H
+#define OPPERATIONS_H
+
 #include "sortmj.h"
 #include "tableStorage.h"
 
@@ -54,3 +57,5 @@ void optimise_query(query* qu) ;
 void query_swap(unity* a, unity* b) ;
 //void print_query(query* qu);
 void delete_query(query* qu);
+
+#endif
