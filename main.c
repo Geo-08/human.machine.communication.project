@@ -4,6 +4,7 @@
 #include <time.h>
 #include "tableStorage.h"
 #include "opperations.h"
+#include "opttree.h"
 
 /*To run the program for small write "./script small | ./project2*/
 
@@ -18,6 +19,9 @@ int main(int argc, char** argv) {
 	char* query=malloc(100*sizeof(char)) ;
 	while (getline(&query, &length, stdin)!=-1) {
 		if (strcmp(query, "F\n")!=0) {
+			printf("start\n");
+			opt_query(tableStorage,query);
+			printf("end\n");
 			uint64_t* out=query_comp(tableStorage, query) ;
 			free(out) ;
 		}
