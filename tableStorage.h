@@ -5,17 +5,30 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <string.h>
+#include <stdbool.h>
+
+#define N 50000000
+
+typedef struct statistic{
+	uint64_t l;
+	uint64_t u;
+	uint64_t f;
+	uint64_t d;
+}statistic;
 
 typedef struct Table {
 	uint64_t numTuples ;
 	uint64_t numColumns ;
 	uint64_t** relations ;
+	statistic* stats;
 } Table ;
 
 typedef struct TableStorage {
 	int size ;
 	Table** tables ;	
 } TableStorage ;
+
+
 
 TableStorage* readTables(void) ;
 void deleteTableStorage(TableStorage*) ;
