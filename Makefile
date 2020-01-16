@@ -5,11 +5,11 @@ OUT  		= project2
 TEST  		= test
 
 $(OUT): $(OBJS) $(TEST) script cmp
-	gcc -o $(OUT) $(OBJS)
+	gcc -o $(OUT) $(OBJS) -lm
 	./test
 
 $(TEST): $(TESTOBJS)
-	gcc -o $(TEST) $(TESTOBJS)
+	gcc -o $(TEST) $(TESTOBJS) -lm
 
 script: script.c
 	gcc -o script script.c
