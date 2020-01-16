@@ -47,9 +47,10 @@ int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call i
 	for (j=0;j<size;j++){
 		if(hist[j] !=0){
 			if(hist[j]*16< MAXS || depth == (64/BITS)){	//checks if the amount of memory the tuples occupy in bucket j is less than 64kb
-				isolate(rel2,psum[j],hist[j],rel);	//rel will have only the contents of bucket j
+				/*isolate(rel2,psum[j],hist[j],rel);	//rel will have only the contents of bucket j
 				quicksort (rel,0,(rel->num_tuples-1)); //rel gets sorted
-				copy_relation (rel2,psum[j],hist[j],rel); //the sorted result is then copied back to rel2 in the corret place
+				copy_relation (rel2,psum[j],hist[j],rel); //the sorted result is then copied back to rel2 in the corret place*/
+				quicksort (rel2,psum[j],(psum[j]+hist[j]-1));
 			}
 			else{ //in case the memory the tuples occupy in bucket j is more or equal to 64kb
 				isolate(rel2,psum[j],hist[j],rel); //rel will have only the contents of bucket j
