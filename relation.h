@@ -16,6 +16,7 @@ typedef struct relation {
 	int sorted;
 	tuple *tuples;
 	uint64_t num_tuples;
+	int* stprel;
 } relation;
 
 
