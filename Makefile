@@ -1,6 +1,6 @@
-ALL 		= project2 script cmp main.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o Tests.o
-OBJS 		= main.o relation.o sortmj.o tuple.o opperations.o tableStorage.o
-TESTOBJS 	= Tests.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o
+ALL 		= project2 script cmp main.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o opttree.o Tests.o
+OBJS 		= main.o relation.o sortmj.o tuple.o opperations.o tableStorage.o opttree.o
+TESTOBJS 	= Tests.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o opttree.o
 OUT  		= project2
 TEST  		= test
 
@@ -27,7 +27,10 @@ relation.o: relation.c
 	gcc -c relation.c
 
 sortmj.o: sortmj.c
-	gcc -c sortmj.c -lm
+	gcc -c sortmj.c
+
+opttree.o: opttree.c
+	gcc -c opttree.c -lm
 
 tuple.o: tuple.c
 	gcc -c tuple.c
@@ -43,6 +46,7 @@ tableStorage.o: tableStorage.c
 
 Tests.o: Tests.c
 	gcc -c Tests.c
+
 
 run_small: $(OUT)
 	./script small | ./project2
