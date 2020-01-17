@@ -5,11 +5,11 @@ OUT  		= project2
 TEST  		= test
 
 $(OUT): $(OBJS) $(TEST) script cmp
-	gcc -o $(OUT) $(OBJS) -lm
+	gcc -o $(OUT) $(OBJS) -lm -g
 	./test
 
 $(TEST): $(TESTOBJS)
-	gcc -o $(TEST) $(TESTOBJS) -lm
+	gcc -o $(TEST) $(TESTOBJS) -lm -g
 
 script: script.c
 	gcc -o script script.c
@@ -21,31 +21,31 @@ all: $(OUT) script $(TEST)
 
 
 main.o: main.c
-	gcc -c main.c
+	gcc -g -c main.c
 
 relation.o: relation.c
-	gcc -c relation.c
+	gcc -g -c relation.c
 
 sortmj.o: sortmj.c
-	gcc -c sortmj.c
+	gcc -g -c sortmj.c
 
 opttree.o: opttree.c
-	gcc -c opttree.c -lm
+	gcc -g -c opttree.c -lm
 
 tuple.o: tuple.c
-	gcc -c tuple.c
+	gcc -g -c tuple.c
 
 CuTest.o: CuTest.c
-	gcc -c CuTest.c
+	gcc -g -c CuTest.c
 
 opperations.o: opperations.c
-	gcc -c opperations.c
+	gcc -g -c opperations.c
 
 tableStorage.o: tableStorage.c
-	gcc -c tableStorage.c
+	gcc -g -c tableStorage.c
 
 Tests.o: Tests.c
-	gcc -c Tests.c
+	gcc -g -c Tests.c
 
 
 run_small: $(OUT)
