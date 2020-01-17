@@ -1,6 +1,6 @@
 #include <math.h>
 #include "opttree.h"
-
+#include <unistd.h>
 
 query* opt_query(TableStorage* store,char* tq){
 	query* qu;
@@ -24,13 +24,10 @@ query* opt_query(TableStorage* store,char* tq){
 		if(qu->filters[i].op == '=')
 			equal_to_s(snode,place,qu->filters[i].num,qu->filters[i].rel.col,store->tables[relnum]->relations[colnum],store->tables[relnum]->numColumns);
 	}
-	printf("generic test\n");
 	node* tnode = snode;
 	unity* tj;
 	for(i=0;i<qu->unum;i++){
-		printf("problem 1\n");
 		tj = find_not_used_join(qu->unitys,qu->unum,tnode->joins,tnode->join_num);
-		printf(
 		expand_node(tnode,tj,qu->unum-tnode->join_num,store,qu->relation_numbers);
 		if(i != 0)
 			free(tj);
@@ -40,6 +37,7 @@ query* opt_query(TableStorage* store,char* tq){
 		qu->unitys[i] = tnode->joins[i];
 	}
 	delete_tree(snode);
+	return qu;
 }
 
 void delete_tree(node* nod){
@@ -53,6 +51,7 @@ void delete_tree(node* nod){
 		free(nod->rss[i].col_num);
 		free(nod->rss[i].ids);
 	}
+	free(nod->rss);
 	free(nod->joins);
 	free(nod->next);
 	free(nod);
@@ -102,9 +101,13 @@ node* find_best_child(node* nod){
 void copy_node(node* nod, node* copy){
 	copy->rs_num = nod->rs_num;
 	copy->rss = malloc(sizeof(rs)*copy->rs_num);
-	copy->joins = nod->joins;
-	copy->join_num = 0;
+	copy->join_num = nod->join_num;
+	if(copy->join_num !=0)
+		copy->joins = malloc(sizeof(unity)*copy->join_num);
 	int i,j,g;
+	for(i=0;i<copy->join_num;i++)
+		copy->joins[i] = nod->joins[i];
+
 	for(i=0;i<copy->rs_num;i++){
 		copy->rss[i].id_num = nod->rss[i].id_num;
 		copy->rss[i].ids = malloc(sizeof(int)*copy->rss[i].id_num);
@@ -123,14 +126,15 @@ void copy_node(node* nod, node* copy){
 
 void exec_pred(node* nod,unity join,int* rel_nums,TableStorage* store){
 	int i,place1, place2,rel1,rel2,col1,col2;
+	printf("hello\n");
 	rel1 = rel_nums[join.rel1.rel];
 	col1 = join.rel1.col;
 	place1 = find_place_n(nod,join.rel1.rel);
 	if(place1 == -1){
 			place1 = add_stat(nod,join.rel1.rel,store->tables[rel1]->numColumns,store->tables[rel1]->stats);	
 	}
-	rel1 = rel_nums[join.rel1.rel];
-	col1 = join.rel1.col;
+	rel2 = rel_nums[join.rel2.rel];
+	col2 = join.rel2.col;
 	place2 = find_place_n(nod,join.rel2.rel);
 	if(place2 == -1){
 			place2 = add_stat(nod,join.rel2.rel,store->tables[rel2]->numColumns,store->tables[rel2]->stats);	
@@ -147,19 +151,24 @@ void exec_pred(node* nod,unity join,int* rel_nums,TableStorage* store){
 			break;
 		}
 	}
+	printf("hi\n");
 	if(place1 == place2){
-		if(rel1 == rel2 && col1 == col2)
+		if(rel1 == rel2 && col1 == col2){
 			selfrel(nod,place1,col1,rel1);
-		else
+		}
+		else{
 			same_matrix(nod,place1,rel1,col1,rel2,col2);
+		}
 	}
-	else
+	else{
 		different_matrix(nod,place1,rel1,col1,place2,rel2,col2);
+	}
 }
 
 void expand_node(node* nod,unity* joins,int join_num,TableStorage* store,int* rel_nums){
 	node* cnode;
-	nod->next = malloc(sizeof(node*)*join_num);
+	if(join_num != 0)
+		nod->next = malloc(sizeof(node*)*join_num);
 	nod->next_num = join_num;
 	int i;
 	for(i=0;i<join_num;i++){
@@ -172,27 +181,28 @@ void expand_node(node* nod,unity* joins,int join_num,TableStorage* store,int* re
 		cnode->joins[cnode->join_num] = joins[i];
 		cnode->join_num++;
 		exec_pred(cnode,joins[i],rel_nums,store);
-		nod->next[i] = cnode;		
+		nod->next[i] = cnode;
 	}
 }
 
 void different_matrix(node* nod,int place1,int rel1,int col1,int place2, int rel2, int col2){
 	rs temp;
-	uint64_t i,j,n,tempf1,tempf2;
-	temp.ids = malloc(sizeof(int)*(nod->rss[place1].id_num+nod->rss[place2].id_num));
-	temp.col_num = malloc(sizeof(int)*(nod->rss[place1].id_num+nod->rss[place2].id_num));
-	temp.stats = malloc(sizeof(int)*(nod->rss[place1].id_num+nod->rss[place2].id_num));
+	double dt,dt2;
+	uint64_t i,j,c,n,tempf1,tempf2;
+	temp.id_num = (nod->rss[place1].id_num)+(nod->rss[place2].id_num);
+	temp.ids = malloc(sizeof(int)*temp.id_num);
+	temp.col_num = malloc(sizeof(int)*temp.id_num);
+	temp.stats = malloc(sizeof(statistic*)*temp.id_num);
 	temp.id_num = nod->rss[place1].id_num+nod->rss[place2].id_num;
 	if(nod->rss[place1].stats[rel1][col1].u < nod->rss[place2].stats[rel2][col2].u)
 		nod->rss[place2].stats[rel2][col2].u = nod->rss[place1].stats[rel1][col1].u;
 	else
 		nod->rss[place1].stats[rel1][col1].u = nod->rss[place2].stats[rel2][col2].u;
-
 	if(nod->rss[place1].stats[rel1][col1].l > nod->rss[place2].stats[rel2][col2].l)
 		nod->rss[place2].stats[rel2][col2].l = nod->rss[place1].stats[rel1][col1].l;
 	else
 		nod->rss[place1].stats[rel1][col1].l = nod->rss[place2].stats[rel2][col2].l;
-
+	
 	n = nod->rss[place1].stats[rel1][col1].u - nod->rss[place1].stats[rel1][col1].l - 1;
 	tempf1 = nod->rss[place1].stats[rel1][col1].f;
 	tempf2 = nod->rss[place2].stats[rel2][col2].f;
@@ -200,9 +210,13 @@ void different_matrix(node* nod,int place1,int rel1,int col1,int place2, int rel
 	nod->rss[place2].stats[rel2][col2].f = nod->rss[place1].stats[rel1][col1].f;
 	nod->rss[place1].stats[rel1][col1].d = nod->rss[place1].stats[rel1][col1].d*nod->rss[place2].stats[rel2][col2].d/n;
 	nod->rss[place2].stats[rel2][col2].d = nod->rss[place1].stats[rel1][col1].d;
+	dt = (double)(nod->rss[place1].stats[rel1][col1].f)/tempf1;
+	
 	for(i=0;i<nod->rss[place1].id_num;i++){
 		temp.ids[i] = nod->rss[place1].ids[i];
 		temp.col_num[i] = nod->rss[place1].col_num[i];
+		temp.stats[i] = malloc(sizeof(statistic)*nod->rss[place1].col_num[i]);
+		
 		for(j=0;j<nod->rss[place1].col_num[i];j++){
 			temp.stats[i][j].l = nod->rss[place1].stats[i][j].l;
 			temp.stats[i][j].u = nod->rss[place1].stats[i][j].u;
@@ -212,34 +226,73 @@ void different_matrix(node* nod,int place1,int rel1,int col1,int place2, int rel
 				temp.stats[i][j].f = nod->rss[place1].stats[rel1][col1].f;
 				continue;
 			}
-			temp.stats[i][j].d = nod->rss[place1].stats[i][j].d * (1-pow(1-(nod->rss[place1].stats[rel1][col1].f/tempf1),nod->rss[place1].stats[i][j].f/nod->rss[place1].stats[i][j].d));
-
+			dt2 = (double)(nod->rss[place1].stats[i][j].f)/nod->rss[place1].stats[i][j].d;
+			//temp.stats[i][j].d = nod->rss[place1].stats[i][j].d * (1-pow(1-(nod->rss[place1].stats[rel1][col1].f/tempf1),nod->rss[place1].stats[i][j].f/nod->rss[place1].stats[i][j].d));
+			temp.stats[i][j].d = nod->rss[place1].stats[i][j].d * (1-pow(1-dt,dt2));
 			temp.stats[i][j].f = nod->rss[place1].stats[rel1][col1].f;
 		}
 	}
 
-
-	for(i=nod->rss[place1].id_num;i<temp.id_num;i++){
+	dt = (double)(nod->rss[place1].stats[rel1][col1].f)/tempf2;
+/*	for(i=nod->rss[place1].id_num;i<temp.id_num;i++){
 		temp.ids[i] = nod->rss[place2].ids[i-nod->rss[place1].id_num];
 		temp.col_num[i] = nod->rss[place2].col_num[i-nod->rss[place1].id_num];
+		temp.stats[i] = malloc(sizeof(statistic)*nod->rss[place2].col_num[i-nod->rss[place1].id_num]);
+		printf("check 2.5\n");
 		for(j=0;j<nod->rss[place2].col_num[i-nod->rss[place1].id_num];j++){
-			temp.stats[i][j].l = nod->rss[place1].stats[i-nod->rss[place1].id_num][j].l;
-			temp.stats[i][j].u = nod->rss[place1].stats[i-nod->rss[place1].id_num][j].u;
+			temp.stats[i][j].l = nod->rss[place2].stats[i-nod->rss[place1].id_num][j].l;
+			temp.stats[i][j].u = nod->rss[place2].stats[i-nod->rss[place1].id_num][j].u;
 
 			if(i == rel2 && j == col2){
 				temp.stats[i][j].d = nod->rss[place2].stats[rel2][col2].d;
 				temp.stats[i][j].f = nod->rss[place2].stats[rel2][col2].f;
 				continue;
 			}
-			temp.stats[i][j].d = nod->rss[place2].stats[i-nod->rss[place1].id_num][j].d * (1-pow(1-(nod->rss[place1].stats[rel1][col1].f/tempf2),nod->rss[place2].stats[i-nod->rss[place1].id_num][j].f/nod->rss[place2].stats[i-nod->rss[place1].id_num][j].d));
-
+			dt2 = (double)(nod->rss[place2].stats[i-nod->rss[place1].id_num][j].f)/nod->rss[place2].stats[i-nod->rss[place1].id_num][j].d;
+			//temp.stats[i][j].d = nod->rss[place2].stats[i-nod->rss[place1].id_num][j].d * (1-pow(1-(nod->rss[place1].stats[rel1][col1].f/tempf2),nod->rss[place2].stats[i-nod->rss[place1].id_num][j].f/nod->rss[place2].stats[i-nod->rss[place1].id_num][j].d));
+			temp.stats[i][j].d = nod->rss[place2].stats[i-nod->rss[place1].id_num][j].d * (1-pow(1-dt,dt2));
 			temp.stats[i][j].f = nod->rss[place1].stats[rel1][col1].f;
+		}
+	}*/
+	c=i;
+
+	for(i=0;i<nod->rss[place2].id_num;i++){
+		c=i+c;	
+		
+		temp.ids[c] = nod->rss[place2].ids[i];
+		temp.col_num[c] = nod->rss[place2].col_num[i];
+		temp.stats[c] = malloc(sizeof(statistic)*nod->rss[place2].col_num[i]);
+		for(j=0;j<nod->rss[place2].col_num[i];j++){
+			 
+			temp.stats[c][j].l = nod->rss[place2].stats[i][j].l;
+			temp.stats[c][j].u = nod->rss[place2].stats[i][j].u;
+			if(i == rel2 && j == col2){
+				temp.stats[c][j].d = nod->rss[place2].stats[rel2][col2].d;
+				temp.stats[c][j].f = nod->rss[place2].stats[rel2][col2].f;
+				continue;
+			}
+			dt2 = (double)(nod->rss[place2].stats[i][j].f)/nod->rss[place2].stats[i][j].d;
+			temp.stats[c][j].d = nod->rss[place2].stats[i][j].d * (1-pow(1-dt,dt2));
+			temp.stats[c][j].f = nod->rss[place1].stats[rel1][col1].f;
 		}
 	}
 	nod->rs_num--;
 	int flag = 0;
 	rs* temps;
 	temps = malloc(sizeof(rs)*nod->rs_num);
+	for(i=0;i<nod->rss[place1].id_num;i++){
+		//print_stats(nod->rss[place1].stats[i],nod->rss[place1].col_num[i]);
+		//printf("%p\n",nod->rss[place1].stats[i]);
+		free(nod->rss[place1].stats[i]);
+	}
+	for(i=0;i<nod->rss[place2].id_num;i++)
+		free(nod->rss[place2].stats[i]);
+	free(nod->rss[place1].stats);
+	free(nod->rss[place2].stats);
+	free(nod->rss[place1].ids);
+	free(nod->rss[place2].ids);
+	free(nod->rss[place1].col_num);
+	free(nod->rss[place2].col_num);
 	for(i=0;i<nod->rs_num;i++){
 		if(flag == 2){
 			temps[i] = nod->rss[i+1];
@@ -262,21 +315,13 @@ void different_matrix(node* nod,int place1,int rel1,int col1,int place2, int rel
 				temps[i] = nod->rss[i];
 		}
 	}
-	for(i=0;i<nod->rss[place1].id_num;i++)
-		free(nod->rss[place1].stats[i]);
-	for(i=0;i<nod->rss[place2].id_num;i++)
-		free(nod->rss[place2].stats[i]);
-	free(nod->rss[place1].stats);
-	free(nod->rss[place2].stats);
-	free(nod->rss[place1].ids);
-	free(nod->rss[place2].ids);
-	free(nod->rss[place1].col_num);
-	free(nod->rss[place2].col_num);
+	free(nod->rss);
 	nod->rss = temps;
 }
 
 void same_matrix(node* nod,int place, int rel1, int col1,int rel2,int col2){
 	uint64_t i,j,n,tempf;
+	double dt,dt2;
 	if(nod->rss[place].stats[rel1][col1].u < nod->rss[place].stats[rel2][col2].u)
 		nod->rss[place].stats[rel2][col2].u = nod->rss[place].stats[rel1][col1].u;
 	else
@@ -291,13 +336,18 @@ void same_matrix(node* nod,int place, int rel1, int col1,int rel2,int col2){
 	tempf = nod->rss[place].stats[rel1][col1].f;
 	nod->rss[place].stats[rel1][col1].f = nod->rss[place].stats[rel1][col1].f/n;
 	nod->rss[place].stats[rel2][col2].f = nod->rss[place].stats[rel1][col1].f;
-	nod->rss[place].stats[rel1][col1].d = nod->rss[place].stats[rel1][col1].d * (1-pow(1-(nod->rss[place].stats[rel1][col1].f/tempf),tempf/nod->rss[place].stats[rel1][col1].d));
+	dt = (double)(nod->rss[place].stats[rel1][col1].f)/tempf;
+	dt2 = (double)(tempf)/nod->rss[place].stats[rel1][col1].d;
+	//nod->rss[place].stats[rel1][col1].d = nod->rss[place].stats[rel1][col1].d * (1-pow(1-(nod->rss[place].stats[rel1][col1].f/tempf),tempf/nod->rss[place].stats[rel1][col1].d));
+	nod->rss[place].stats[rel1][col1].d = nod->rss[place].stats[rel1][col1].d * (1-pow(1-dt,dt2));
 	nod->rss[place].stats[rel2][col2].d = nod->rss[place].stats[rel1][col1].d;
 	for(i=0;i<nod->rss[place].id_num;i++){
 		for(j=0;j<nod->rss[place].col_num[i];j++){
 			if((i == rel1 && j == col1) || (i == rel2 && j == col2))
 				continue;
-			nod->rss[place].stats[i][j].d = nod->rss[place].stats[i][j].d * (1-pow(1-(nod->rss[place].stats[rel1][col1].f/tempf),nod->rss[place].stats[i][j].f/nod->rss[place].stats[i][j].d));
+			dt2 = (double)(nod->rss[place].stats[i][j].f)/nod->rss[place].stats[i][j].d;
+			//nod->rss[place].stats[i][j].d = nod->rss[place].stats[i][j].d * (1-pow(1-(nod->rss[place].stats[rel1][col1].f/tempf),nod->rss[place].stats[i][j].f/nod->rss[place].stats[i][j].d));
+			nod->rss[place].stats[i][j].d = nod->rss[place].stats[i][j].d * (1-pow(1-dt,dt2));
 			nod->rss[place].stats[i][j].f = nod->rss[place].stats[rel1][col1].f;
 		}
 	}
@@ -335,10 +385,19 @@ void lower_than_s(node* nod,int place,uint64_t value,int col){
 	tempf = nod->rss[place].stats[0][col].f;
 	if(nod->rss[place].stats[0][col].u > value)
 		nod->rss[place].stats[0][col].u = value;
+
+	double dt = ((double)(nod->rss[place].stats[0][col].u - nod->rss[place].stats[0][col].l)/(tempu - nod->rss[place].stats[0][col].l)) ;
+	double dt2;
+	nod->rss[place].stats[0][col].d = dt * nod->rss[place].stats[0][col].d;
+	nod->rss[place].stats[0][col].f = dt * nod->rss[place].stats[0][col].f;
+	dt = ((double)(nod->rss[place].stats[0][col].f))/tempf;
 	for(i=0;i<nod->rss[place].col_num[0];i++){
 		if(i == col)
 			continue;
-		nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow(1-(nod->rss[place].stats[0][col].f/tempf),nod->rss[place].stats[0][i].f/nod->rss[place].stats[0][i].d));
+		
+		dt2 = ((double)(nod->rss[place].stats[0][i].f))/nod->rss[place].stats[0][i].d;
+		//nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow(1-(nod->rss[place].stats[0][col].f/tempf),nod->rss[place].stats[0][i].f/nod->rss[place].stats[0][i].d));
+		nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow(1-dt,dt2));
 		nod->rss[place].stats[0][i].f = nod->rss[place].stats[0][col].f;
 	}
 	
@@ -361,12 +420,17 @@ void bigger_than_s(node* nod,int place,uint64_t value,int col){
 	tempf = nod->rss[place].stats[0][col].f;
 	if(nod->rss[place].stats[0][col].l < value)
 		nod->rss[place].stats[0][col].l = value;
-	nod->rss[place].stats[0][col].d = ((nod->rss[place].stats[0][col].u - nod->rss[place].stats[0][col].l)/(nod->rss[place].stats[0][col].u - templ))* nod->rss[place].stats[0][col].d;
-	nod->rss[place].stats[0][col].f = ((nod->rss[place].stats[0][col].u - nod->rss[place].stats[0][col].l)/(nod->rss[place].stats[0][col].u - templ))* nod->rss[place].stats[0][col].f;
+	double dt = ((double)(nod->rss[place].stats[0][col].u - nod->rss[place].stats[0][col].l)/(nod->rss[place].stats[0][col].u - templ)) ;
+	double dt2;
+	nod->rss[place].stats[0][col].d = dt * nod->rss[place].stats[0][col].d;
+	nod->rss[place].stats[0][col].f = dt * nod->rss[place].stats[0][col].f;
+	dt = ((double)(nod->rss[place].stats[0][col].f))/tempf;
 	for(i=0;i<nod->rss[place].col_num[0];i++){
 		if(i == col)
 			continue;
-		nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow(1-(nod->rss[place].stats[0][col].f/tempf),nod->rss[place].stats[0][i].f/nod->rss[place].stats[0][i].d));
+		dt2 = ((double)(nod->rss[place].stats[0][i].f))/nod->rss[place].stats[0][i].d;
+		//nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow((double)(1-(nod->rss[place].stats[0][col].f/tempf)),nod->rss[place].stats[0][i].f/nod->rss[place].stats[0][i].d));
+		nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow(1-dt,dt2));
 		nod->rss[place].stats[0][i].f = nod->rss[place].stats[0][col].f;
 	}
 }
@@ -394,12 +458,16 @@ void equal_to_s(node* nod,int place,uint64_t value,int col,uint64_t* ar,uint64_t
 	}
 	nod->rss[place].stats[0][col].l = value;
 	nod->rss[place].stats[0][col].u = value;
-	
+	double dt,dt2;
+	dt = ((double)(nod->rss[place].stats[0][col].f))/tempf;
 	for(i=0;i<nod->rss[place].col_num[0];i++){
 		if(i == col)
 			continue;
+		
+		dt2 = ((double)(nod->rss[place].stats[0][i].f))/nod->rss[place].stats[0][i].d;
 		//nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-(1-pow((nod->rss[place].stats[0][col].f/tempf),nod->rss[place].stats[0][i].f/nod->rss[place].stats[0][i].d)));
-		nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow(1-(nod->rss[place].stats[0][col].f/tempf),nod->rss[place].stats[0][i].f/nod->rss[place].stats[0][i].d));
+		//nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow(1-(nod->rss[place].stats[0][col].f/tempf),nod->rss[place].stats[0][i].f/nod->rss[place].stats[0][i].d));
+		nod->rss[place].stats[0][i].d = nod->rss[place].stats[0][i].d * (1-pow(1-dt,dt2));
 		nod->rss[place].stats[0][i].f = nod->rss[place].stats[0][col].f;
 	}
 }
@@ -442,6 +510,7 @@ int add_stat(node* nod,int name,uint64_t col,statistic* stats){
 }
 
 node* node_init(){
+
 	node* n;
 	n = malloc(sizeof(node));
 	n->rs_num =0;
