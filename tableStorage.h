@@ -36,5 +36,7 @@ void addTable(TableStorage*, Table*) ;
 Table* createTable(uint64_t, uint64_t) ;
 void deleteTable(Table*) ;
 Table* readTable(char*) ;
+void print_statistic(statistic stat);
+void print_stats(statistic* stats,int snums);
 
 #endif

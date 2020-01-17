@@ -126,3 +126,16 @@ Table* readTable(char* fileName) {
 	fclose(file) ;
 	return table ;
 }
+
+void print_statistic(statistic stat){
+	printf("%" PRIu64" ",stat.l);
+	printf("%" PRIu64" ",stat.u);
+	printf("%" PRIu64" ",stat.d);
+	printf("%" PRIu64" \n",stat.f);
+}
+
+void print_stats(statistic* stats,int snums){
+	int i;
+	for(i=0;i<snums;i++)
+		print_statistic(stats[i]);
+}
