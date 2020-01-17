@@ -4,6 +4,103 @@
 
 //int gcounter =0;
 
+uint64_t* query_comp_v2(TableStorage* store,query* qu){
+	/*query* qu;
+	query_init(&qu);
+	read_query(qu,tq);
+	//optimise_query(qu) ;*/
+	inbetween* inb;
+	inb_init(&inb);
+	int i,place;
+	int relnum,colnum;
+	for(i=0;i<qu->fnum;i++){//Calculate filter predicates and save them in inbetween structure 
+		relnum = qu->relation_numbers[qu->filters[i].rel.rel];
+		colnum = qu->filters[i].rel.col;
+		place = find_place(inb,qu->filters[i].rel.rel);
+		if(place == -1){//If this relation hasn't been used before add one in it
+			place = add_relation(inb,qu->filters[i].rel.rel,store->tables[relnum]->numTuples);	
+		}
+		if(qu->filters[i].rel.rel != inb->rels[place].keyid || colnum != inb->rels[place].keycol){//Checking if the relation has used the collumn as a key before
+			col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->filters[i].rel.rel);//copy collumn meant to be used as key in the relation key for every tuple
+			inb->rels[place].keyid = qu->filters[i].rel.rel;
+			inb->rels[place].keycol = colnum;
+		}
+		//Filter is executed
+		if(qu->filters[i].op == '<')
+			lower_than(inb,place,qu->filters[i].num);
+		if(qu->filters[i].op == '>')
+			bigger_than(inb,place,qu->filters[i].num);
+		if(qu->filters[i].op == '=')
+			equal_to(inb,place,qu->filters[i].num);
+	}
+	int place2;
+	int relnum2,colnum2;
+	for(i=0;i<qu->unum;i++){//Merge and join 
+		//printf("unity %d\n",i);
+		relnum = qu->relation_numbers[qu->unitys[i].rel1.rel];
+		colnum = qu->unitys[i].rel1.col;
+		place = find_place(inb,qu->unitys[i].rel1.rel);
+		if(place == -1){//If the first relation to take part isn't in the inbetween results 
+			place = add_relation(inb,qu->unitys[i].rel1.rel,store->tables[relnum]->numTuples);//add it	
+		}
+		if(qu->unitys[i].rel1.rel != inb->rels[place].keyid || colnum != inb->rels[place].keycol){//checking if the collumn of the relation has been used before as a key.
+			col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->unitys[i].rel1.rel);//copy contents of the collumn as a key.
+			inb->rels[place].keyid = qu->unitys[i].rel1.rel;
+			inb->rels[place].keycol = colnum;
+		}
+		relnum2 = qu->relation_numbers[qu->unitys[i].rel2.rel];
+		colnum2 = qu->unitys[i].rel2.col;
+		place2 = find_place(inb,qu->unitys[i].rel2.rel);
+		if(place2 == -1){//If the second relation to take part isn't in the inbetween results
+			place2 = add_relation(inb,qu->unitys[i].rel2.rel,store->tables[relnum2]->numTuples);	
+		}
+		if(place == place2){//if both relations are in the same inbetween result relation, could mean they are the same.
+			col_to_key2(inb,place2,store->tables[relnum2]->relations[colnum2],qu->unitys[i].rel2.rel);//copy collumn of second relation to key2.
+			equals(inb,place);//do the filtering.
+			continue;
+		}
+		if(qu->unitys[i].rel2.rel != inb->rels[place2].keyid || colnum2 != inb->rels[place2].keycol){
+			col_to_key(inb,place2,store->tables[relnum2]->relations[colnum2],qu->unitys[i].rel2.rel);
+			inb->rels[place2].keyid = qu->unitys[i].rel2.rel;
+			inb->rels[place2].keycol = colnum2;
+		}
+		if(inb->rels[place].sorted == -1){//Checking if the first relation has been already sorted by it's key
+			sort(&(inb->rels[place]));
+			inb->rels[place].sorted =0;
+		}
+		if(inb->rels[place2].sorted == -1){//Same for the other.
+			sort(&(inb->rels[place2]));
+			inb->rels[place2].sorted =0;
+		}
+		//printf("join rels should start\n");
+		join_rels(inb,place,place2);//joins sorted relations
+	}
+	uint64_t summ,j;
+	uint64_t* out;
+	out = (uint64_t*)malloc(sizeof(uint64_t)*qu->snum);
+	for(i=0;i<qu->snum;i++){//calculates sums
+		relnum = qu->relation_numbers[qu->sums[i].rel];
+		colnum = qu->sums[i].col;
+		place = find_place(inb,qu->sums[i].rel);
+		col_to_key(inb,place,store->tables[relnum]->relations[colnum],qu->sums[i].rel);
+		summ=0;
+		for(j=0;j<inb->rels[place].num_tuples;j++)
+			summ = summ + inb->rels[place].tuples[j].key;
+		out[i] = summ;
+		if(summ == 0)
+			printf("NULL ");
+		else
+			printf("%" PRIu64" ",summ);		 
+	}
+	printf("\n");
+	delete_inb(inb);
+	delete_query(qu);
+	//in case there is a need for the function to actually return the results, comment free(out); and remove comment from return out; out should be freed out of the function if that happens.
+	//free(out);
+	return out;
+}
+
+
 uint64_t* query_comp(TableStorage* store,char* tq){
 	query* qu;
 	query_init(&qu);
