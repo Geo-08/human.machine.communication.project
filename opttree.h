@@ -26,6 +26,9 @@ typedef struct tree{
 }tree;
 
 
+
+void print_un(unity un);
+void un_copy(unity* to, unity from);
 int un_comp(unity first,unity second);
 void delete_tree(node* nod);
 unity* find_not_used_join(unity* from,int fnum, unity* outof,int onum);

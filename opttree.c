@@ -6,7 +6,11 @@ query* opt_query(TableStorage* store,char* tq){
 	query* qu;
 	query_init(&qu);
 	read_query(qu,tq);
+	//printf("joins at start\n");
+	
 	int i,place;
+	//for(i=0;i<qu->unum;i++)
+	//	print_un(qu->unitys[i]);
 	int relnum,colnum;
 	node* snode;
 	snode = node_init();
@@ -26,6 +30,7 @@ query* opt_query(TableStorage* store,char* tq){
 	}
 	node* tnode = snode;
 	unity* tj;
+	//printf("unum is %d\n",qu->unum);
 	for(i=0;i<qu->unum;i++){
 		tj = find_not_used_join(qu->unitys,qu->unum,tnode->joins,tnode->join_num);
 		expand_node(tnode,tj,qu->unum-tnode->join_num,store,qu->relation_numbers);
@@ -34,9 +39,12 @@ query* opt_query(TableStorage* store,char* tq){
 		tnode = find_best_child(tnode);
 	}
 	for(i=0;i<qu->unum;i++){
-		qu->unitys[i] = tnode->joins[i];
+		un_copy(&(qu->unitys[i]),tnode->joins[i]);
 	}
 	delete_tree(snode);
+	//printf("joins at end\n");
+	//for(i=0;i<qu->unum;i++)
+	//	print_un(qu->unitys[i]);
 	return qu;
 }
 
@@ -62,17 +70,25 @@ unity* find_not_used_join(unity* from,int fnum, unity* outof,int onum){
 	if(onum == 0)
 		return from;
 	int i,j,count = 0;
+	bool* keep;
+	keep = malloc(sizeof(bool)*onum);
+	for(i=0;i<onum;i++)
+		keep[i] = false;
 	unity* temp = malloc(sizeof(unity)*(fnum - onum));
 	for(i=0;i<fnum;i++){
 		for(j=0;j<onum;j++){
-			if(un_comp(from[i],outof[j])==1)
-				break;
+			if(keep[j] == false)
+				if(un_comp(from[i],outof[j])==1){
+					keep[j] = true;
+					break;
+				}			
 			if(j == onum-1){
-				temp[count] = from[i];
+				un_copy(&(temp[count]), from[i]);
 				count++;
 			}	
 		}
 	}
+	free(keep);
 	return temp;
 }
 
@@ -106,7 +122,7 @@ void copy_node(node* nod, node* copy){
 		copy->joins = malloc(sizeof(unity)*copy->join_num);
 	int i,j,g;
 	for(i=0;i<copy->join_num;i++)
-		copy->joins[i] = nod->joins[i];
+		un_copy(&(copy->joins[i]),nod->joins[i]);
 
 	for(i=0;i<copy->rs_num;i++){
 		copy->rss[i].id_num = nod->rss[i].id_num;
@@ -126,7 +142,7 @@ void copy_node(node* nod, node* copy){
 
 void exec_pred(node* nod,unity join,int* rel_nums,TableStorage* store){
 	int i,place1, place2,rel1,rel2,col1,col2;
-	printf("hello\n");
+	//printf("printing joinrel1rel %d\n",join.rel1.rel);
 	rel1 = rel_nums[join.rel1.rel];
 	col1 = join.rel1.col;
 	place1 = find_place_n(nod,join.rel1.rel);
@@ -139,6 +155,8 @@ void exec_pred(node* nod,unity join,int* rel_nums,TableStorage* store){
 	if(place2 == -1){
 			place2 = add_stat(nod,join.rel2.rel,store->tables[rel2]->numColumns,store->tables[rel2]->stats);	
 	}
+
+	
 	for(i=0;i<nod->rss[place1].id_num;i++){
 		if(nod->rss[place1].ids[i] == join.rel1.rel){
 			rel1 = i;
@@ -151,7 +169,6 @@ void exec_pred(node* nod,unity join,int* rel_nums,TableStorage* store){
 			break;
 		}
 	}
-	printf("hi\n");
 	if(place1 == place2){
 		if(rel1 == rel2 && col1 == col2){
 			selfrel(nod,place1,col1,rel1);
@@ -178,7 +195,7 @@ void expand_node(node* nod,unity* joins,int join_num,TableStorage* store,int* re
 			cnode->joins = malloc(sizeof(unity));
 		else
 			cnode->joins = realloc(cnode->joins,sizeof(unity)*(cnode->join_num+1));
-		cnode->joins[cnode->join_num] = joins[i];
+		un_copy(&(cnode->joins[cnode->join_num]),joins[i]);
 		cnode->join_num++;
 		exec_pred(cnode,joins[i],rel_nums,store);
 		nod->next[i] = cnode;
@@ -534,8 +551,25 @@ int find_place_n(node* nod,int rel){
 	return -1;
 }
 
+void print_un(unity un){
+	printf("%d %d ",un.rel1.rel,un.rel1.col);
+	printf("%d %d\n",un.rel2.rel,un.rel2.col);
+}
+void un_copy(unity* to, unity from){
+	to->rel1.rel = from.rel1.rel;
+	to->rel1.col = from.rel1.col;	
+	to->rel2.rel = from.rel2.rel;
+	to->rel2.col = from.rel2.col;
+}
+
 int un_comp(unity first,unity second){
-	if(first.rel1.rel == second.rel1.rel && first.rel1.col == second.rel1.col)
-		return 1;
+	if(first.rel1.rel == second.rel1.rel) {
+		if(first.rel1.col == second.rel1.col){
+			 if (first.rel2.rel == second.rel2.rel){ 
+				if (first.rel2.col == second.rel2.col )
+					return 1;
+			}
+		}
+	}
 	return 0;
 }
