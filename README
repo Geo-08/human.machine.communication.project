@@ -13,6 +13,10 @@ Total time for the execution
 small:Around 5 seconds
 medium:Around 286 seconds, a little less than 5 minutes
 
+Execution time with query optimizer, no parallel programming.
+small:Around 5 seconds closer to 6.
+medium:Around 273 seconds.
+
 medium was tested on a system with 8GB, due to query "7 7 0|0.1=1.2&1.2=2.0&1.0>11263845|0.2 2.0" causing a swap to disk to occure it was ommited from the test
 
 
@@ -36,6 +40,7 @@ unity, has 2 relation_collumns, information for merge join predicates.
 query, arrays of integers, filters, unitys and relation_collumns as well as integers keeping the number of each are used to store a query.
 
 
+
 void read_query(query* qu,char* tq)
 parses the string tq and stores it as a query which qu points at at the end.
 
@@ -43,6 +48,29 @@ uint64_t* query_comp(TableStorage* store,char* tq)
 computes the query pointed by tq, store is the table where the relation tables are stored.
 Predicates are executed starting from filters, moving on to merge join and finally calculating the sums.
 Every time a relation table is requested it's first searched on the inbetween structure of relation arrays, if it's not found it's added in it, then opperations are done upon it. During merge join assuming they aren't the same relation or haven't been merged before, they will both be added in the inbetween structure sorted and merged, in which the result will be saved in a new relation in the inbetween structure and the two relations will be removed from it.
+
+Query optimizer explanation
+For the Query optimizer a structure statistic exists that has an unassigned 64 bit integer for every stat of a row of a relation, lowest value, highest value, number of distinct values, total number of values.
+In order to find the best order of join predicates to be computed a structure node is utilized. Said structure contains an array holding the different relations that are saved in the inbetween results as well as their statistics and the join queries that have been executed so far as well as pointing to the children queries when expanded. Structure and code are in the opttree.c and opttree.h files.
+
+query* opt_query(TableStorage* store,char* tq);
+
+opt_query takes in the storage where the relation tables and their statistics are stored as well as a query in string form as it's parameteres.
+It will start by reading using the read_query function to parse the string and return it's information in structure query form. It will then initialize
+a node which will be the root of the expanding tree to find the best join query order. Firstly the statistics for the filters will be applied and calculated and their collected result serving as the starting node of the tree. The tree will then expand producing one child for every join query,
+the algorithm will then check which of the three children has the least number of total tuples and expand it further repeating the process till the optimal order is found.
+
+
+node* find_best_child(node* nod);
+Finds the best child to be expanded from the children of the node that pointer nod points to and returns it. The best child being the one with the least amount of tuples.
+
+void expand_node(node* nod,unity* joins,int join_num,TableStorage* store,int* rel_nums);
+finds the children of nod,one child per element in the array joins.
+
+
+void exec_pred(node* nod,unity join,int* rel_nums,TableStorage* store);
+executes the join predicate to find the new statistics for the node nod.
+
 
 
 int sort(relation *rel)
