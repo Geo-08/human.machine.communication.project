@@ -42,7 +42,9 @@ void Test_query_compNULL(CuTest*) ;
 void Test_Equal_s(CuTest* tc);
 void Test_Bigger_s(CuTest* tc);
 void Test_Lower_s(CuTest* tc);
-
+void Test_selfrel(CuTest* tc);
+void  Test_same_matrix(CuTest* tc);
+void Test_different_matrix(CuTest* tc);
 
 void RunAllTests(void) {
 	CuString *output = CuStringNew();
@@ -96,6 +98,9 @@ CuSuite* CuGetSuite_opperations(void)
 	SUITE_ADD_TEST(suite, Test_Equal_s) ;
 	SUITE_ADD_TEST(suite, Test_Bigger_s) ;
 	SUITE_ADD_TEST(suite, Test_Lower_s);
+	SUITE_ADD_TEST(suite, Test_selfrel);
+	SUITE_ADD_TEST(suite, Test_same_matrix);
+	SUITE_ADD_TEST(suite, Test_different_matrix);
 	return suite;
 }
 
@@ -551,3 +556,76 @@ void Test_Lower_s(CuTest* tc){
 	CuAssertIntEquals(tc, 24, nod->rss[0].stats[0][0].f) ;
 	delete_tree(nod);
 }
+
+
+void Test_selfrel(CuTest* tc){
+	node* nod = node_init();
+	statistic stats[2];
+	stats[0].l = 5;
+	stats[0].u = 30;
+	stats[0].d = 8;
+	stats[0].f = 40;
+	stats[1].l = 40;
+	stats[1].u = 80;
+	stats[1].d = 13;
+	stats[1].f = 50;
+	int i,place = add_stat(nod,1,2,stats);
+	selfrel(nod,place,0,0);
+	CuAssertIntEquals(tc, 5, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 8, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc, 66, nod->rss[0].stats[0][0].f) ;
+	delete_tree(nod);
+}
+
+
+void  Test_same_matrix(CuTest* tc){
+	node* nod = node_init();
+	statistic stats[2];
+	stats[0].l = 5;
+	stats[0].u = 30;
+	stats[0].d = 8;
+	stats[0].f = 40;
+	stats[1].l = 20;
+	stats[1].u = 80;
+	stats[1].d = 13;
+	stats[1].f = 50;
+	int i,place = add_stat(nod,1,2,stats);
+	same_matrix(nod,place, 0, 0,0,1);
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 3, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc, 4, nod->rss[0].stats[0][0].f) ;
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[0][1].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][1].u) ;
+	CuAssertIntEquals(tc, 3, nod->rss[0].stats[0][1].d) ;
+	CuAssertIntEquals(tc, 4, nod->rss[0].stats[0][1].f) ;
+	delete_tree(nod);
+}
+
+
+void Test_different_matrix(CuTest* tc){
+	node* nod = node_init();
+	statistic stats[1],stats1[1];
+	stats[0].l = 5;
+	stats[0].u = 30;
+	stats[0].d = 8;
+	stats[0].f = 40;
+	stats1[0].l = 20;
+	stats1[0].u = 80;
+	stats1[0].d = 13;
+	stats1[0].f = 50;
+	int i,place = add_stat(nod,1,1,stats);
+	int place2 = add_stat(nod,2,1,stats1);
+	different_matrix(nod,place,0,0,place2,0,0);
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 11, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc,222 , nod->rss[0].stats[0][0].f) ;
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[1][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[1][0].u) ;
+	CuAssertIntEquals(tc, 11, nod->rss[0].stats[1][0].d) ;
+	CuAssertIntEquals(tc, 222, nod->rss[0].stats[1][0].f) ;
+	delete_tree(nod);
+}
+
