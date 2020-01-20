@@ -7,6 +7,7 @@
 #include "sortmj.h"
 #include "opperations.h"
 #include "tableStorage.h"
+#include "opttree.h"
 
 CuSuite* CuGetSuite_opperations() ;
 void Test_lower_thanOnePass(CuTest*) ;
@@ -37,6 +38,10 @@ void Test_read_querySmall(CuTest*) ;
 
 void Test_query_compSmall(CuTest*) ;
 void Test_query_compNULL(CuTest*) ;
+
+void Test_Equal_s(CuTest* tc);
+void Test_Bigger_s(CuTest* tc);
+void Test_Lower_s(CuTest* tc);
 
 
 void RunAllTests(void) {
@@ -87,6 +92,10 @@ CuSuite* CuGetSuite_opperations(void)
 	
 	SUITE_ADD_TEST(suite, Test_query_compSmall) ;
 	SUITE_ADD_TEST(suite, Test_query_compNULL) ;
+
+	SUITE_ADD_TEST(suite, Test_Equal_s) ;
+	SUITE_ADD_TEST(suite, Test_Bigger_s) ;
+	SUITE_ADD_TEST(suite, Test_Lower_s);
 	return suite;
 }
 
@@ -475,4 +484,70 @@ void Test_query_compNULL(CuTest* tc) {
 	CuAssertIntEquals(tc, 0, out[1]) ;	
 	free(out) ;
 	deleteTableStorage(tableStorage) ;
+}
+
+void Test_Equal_s(CuTest* tc){
+	node* nod = node_init();
+	statistic stats[2];
+	stats[0].l = 5;
+	stats[0].u = 30;
+	stats[0].d = 8;
+	stats[0].f = 40;
+	stats[1].l = 40;
+	stats[1].u = 80;
+	stats[1].d = 13;
+	stats[1].f = 50;
+	int i,place = add_stat(nod,1,2,stats);
+	uint64_t ar[5];
+	for (i=0;i<4;i++){
+		ar[i] = i+4;
+	}
+	ar[4] = 18;
+	equal_to_s(nod,place,18,0,ar,5);
+	CuAssertIntEquals(tc, 18, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 18, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 1, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc, 5, nod->rss[0].stats[0][0].f) ;
+	delete_tree(nod);
+}
+
+
+void Test_Bigger_s(CuTest* tc){
+	node* nod = node_init();
+	statistic stats[2];
+	stats[0].l = 5;
+	stats[0].u = 30;
+	stats[0].d = 8;
+	stats[0].f = 40;
+	stats[1].l = 40;
+	stats[1].u = 80;
+	stats[1].d = 13;
+	stats[1].f = 50;
+	int i,place = add_stat(nod,1,2,stats);
+	bigger_than_s(nod,place,20,0);
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 3, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc, 16, nod->rss[0].stats[0][0].f) ;
+	delete_tree(nod);
+}
+
+void Test_Lower_s(CuTest* tc){
+	node* nod = node_init();
+	statistic stats[2];
+	stats[0].l = 5;
+	stats[0].u = 30;
+	stats[0].d = 8;
+	stats[0].f = 40;
+	stats[1].l = 40;
+	stats[1].u = 80;
+	stats[1].d = 13;
+	stats[1].f = 50;
+	int i,place = add_stat(nod,1,2,stats);
+	lower_than_s(nod,place,20,0);
+	CuAssertIntEquals(tc, 5, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 4, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc, 24, nod->rss[0].stats[0][0].f) ;
+	delete_tree(nod);
 }
