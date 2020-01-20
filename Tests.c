@@ -45,6 +45,9 @@ void Test_Lower_s(CuTest* tc);
 void Test_selfrel(CuTest* tc);
 void  Test_same_matrix(CuTest* tc);
 void Test_different_matrix(CuTest* tc);
+void Test_exec_pred_dif(CuTest* tc);
+void Test_exec_pred_same(CuTest* tc);
+void Test_exec_pred_self(CuTest* tc);
 
 void RunAllTests(void) {
 	CuString *output = CuStringNew();
@@ -101,6 +104,9 @@ CuSuite* CuGetSuite_opperations(void)
 	SUITE_ADD_TEST(suite, Test_selfrel);
 	SUITE_ADD_TEST(suite, Test_same_matrix);
 	SUITE_ADD_TEST(suite, Test_different_matrix);
+	SUITE_ADD_TEST(suite, Test_exec_pred_dif);
+	SUITE_ADD_TEST(suite, Test_exec_pred_same);
+	SUITE_ADD_TEST(suite, Test_exec_pred_self);
 	return suite;
 }
 
@@ -629,3 +635,102 @@ void Test_different_matrix(CuTest* tc){
 	delete_tree(nod);
 }
 
+void Test_exec_pred_dif(CuTest* tc){
+	TableStorage* tableStorage ;
+	tableStorage=malloc(sizeof(TableStorage)) ;
+	tableStorage->size=0 ;
+	Table* table1=createTable(1, 1) ;
+	table1->stats[0].l = 5; 
+	table1->stats[0].u = 30;
+	table1->stats[0].d = 8;
+	table1->stats[0].f = 40;
+	Table* table2=createTable(1, 1) ;
+	table2->stats[0].l =	20;
+	table2->stats[0].u =	80;
+	table2->stats[0].d =	13;
+	table2->stats[0].f =	50;
+	addTable(tableStorage, table1) ;
+	addTable(tableStorage, table2) ;
+	unity join;
+	join.rel1.rel = 0;
+	join.rel1.col = 0;
+	join.rel2.rel = 1;
+	join.rel2.col = 0;
+	int r[2];
+	r[0] = 0;
+	r[1] = 1;
+	node* nod = node_init();
+	exec_pred(nod,join,r,tableStorage);
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 11, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc,222 , nod->rss[0].stats[0][0].f) ;
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[1][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[1][0].u) ;
+	CuAssertIntEquals(tc, 11, nod->rss[0].stats[1][0].d) ;
+	CuAssertIntEquals(tc, 222, nod->rss[0].stats[1][0].f) ;
+	delete_tree(nod);
+	deleteTableStorage(tableStorage);	
+}
+
+void Test_exec_pred_same(CuTest* tc){
+	TableStorage* tableStorage ;
+	tableStorage=malloc(sizeof(TableStorage)) ;
+	tableStorage->size=0 ;
+	Table* table1=createTable(1, 2) ;
+	table1->stats[0].l = 5; 
+	table1->stats[0].u = 30;
+	table1->stats[0].d = 8;
+	table1->stats[0].f = 40;
+	table1->stats[1].l =	20;
+	table1->stats[1].u =	80;
+	table1->stats[1].d =	13;
+	table1->stats[1].f =	50;
+	addTable(tableStorage, table1) ;
+	unity join;
+	join.rel1.rel = 0;
+	join.rel1.col = 0;
+	join.rel2.rel = 0;
+	join.rel2.col = 1;
+	int r[1];
+	r[0] = 0;
+	node* nod = node_init();
+	exec_pred(nod,join,r,tableStorage);
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 3, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc,4 , nod->rss[0].stats[0][0].f) ;
+	CuAssertIntEquals(tc, 20, nod->rss[0].stats[0][1].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][1].u) ;
+	CuAssertIntEquals(tc, 3, nod->rss[0].stats[0][1].d) ;
+	CuAssertIntEquals(tc, 4, nod->rss[0].stats[0][1].f) ;
+	delete_tree(nod);
+	deleteTableStorage(tableStorage);	
+}
+
+void Test_exec_pred_self(CuTest* tc){
+	TableStorage* tableStorage ;
+	tableStorage=malloc(sizeof(TableStorage)) ;
+	tableStorage->size=0 ;
+	Table* table1=createTable(1, 2) ;
+	table1->stats[0].l = 5; 
+	table1->stats[0].u = 30;
+	table1->stats[0].d = 8;
+	table1->stats[0].f = 40;
+	addTable(tableStorage, table1) ;
+	unity join;
+	join.rel1.rel = 0;
+	join.rel1.col = 0;
+	join.rel2.rel = 0;
+	join.rel2.col = 0;
+	int r[1];
+	r[0] = 0;
+	node* nod = node_init();
+	exec_pred(nod,join,r,tableStorage);
+	CuAssertIntEquals(tc, 5, nod->rss[0].stats[0][0].l) ;
+	CuAssertIntEquals(tc, 30, nod->rss[0].stats[0][0].u) ;
+	CuAssertIntEquals(tc, 8, nod->rss[0].stats[0][0].d) ;
+	CuAssertIntEquals(tc, 66, nod->rss[0].stats[0][0].f) ;
+	delete_tree(nod);
+	deleteTableStorage(tableStorage);	
+}
