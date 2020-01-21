@@ -354,7 +354,7 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 		size = inb->rels[place1].num_tuples;
 	ts = size/2;
 	relation temp;
-	temp.num_ids = inb->rels[place1].num_ids + inb->rels[place2].num_ids;
+	//temp.num_ids = inb->rels[place1].num_ids + inb->rels[place2].num_ids;
 	temp.ids = (int*)malloc(sizeof(int)*(temp.num_ids));
 	for(i=0;i<inb->rels[place1].num_ids;i++)
 		temp.ids[i] = inb->rels[place1].ids[i];
@@ -414,11 +414,13 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 		JoinBarrier(jobScheduler, jobScheduler->num_of_join_jobs-1, &join_sem) ;
 		sem_destroy(&join_sem) ;
 		uint64_t offset=0 ;
+		temp.num_tuples=0 ;
 		for (i=0 ; i<jobScheduler->num_of_join_jobs ; i++) {
 			if (i==0)
-				temp.tuples=(tuple*)malloc((result[i]->num_tuples)*sizeof(tuple)) ;
+				temp.tuples=(tuple*)malloc(1000000000) ;
 			else
 				temp.tuples=realloc(temp.tuples, (result[i]->num_tuples+offset)*sizeof(tuple)) ;
+			temp.num_tuples+=result[i]->num_tuples ;
 			memcpy(temp.tuples+offset, result[i]->tuples, result[i]->num_tuples*sizeof(tuple)) ;
 			offset+=result[i]->num_tuples ;
 			free(result[i]->tuples) ;
@@ -556,8 +558,8 @@ void equal_to (inbetween* inb,int place,uint64_t fil){
 	int num =0;
 	for(i=0;i<inb->rels[place].num_tuples;i++){
 		if(inb->rels[place].tuples[i].key == fil){
-			temp[num].key = inb->rels[place].tuples[i].key;
-			temp[num].payload = (uint64_t*)malloc(sizeof(uint64_t)*inb->rels[place].num_ids);
+			//temp[num].key = inb->rels[place].tuples[i].key;
+			//temp[num].payload = (uint64_t*)malloc(sizeof(uint64_t)*inb->rels[place].num_ids);
 			for(j=0;j<inb->rels[place].num_ids;j++)
 				temp[num].payload[j] = inb->rels[place].tuples[i].payload[j];
 			num++;
@@ -571,6 +573,7 @@ void equal_to (inbetween* inb,int place,uint64_t fil){
 
 void col_to_key(inbetween* inb,int place,uint64_t* col,int name){
 	int i,j;
+
 	for(i=0;i<inb->rels[place].num_ids;i++){
 		if(inb->rels[place].ids[i] == name)
 			break;
