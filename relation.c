@@ -123,12 +123,22 @@ int isolate(relation *rel,uint64_t start,uint64_t size,relation *out){	//takes p
 
 
 
+int isolate_v2(relation *rel,uint64_t start,uint64_t size,relation *out){	//takes part of rel and copies it on out
+	out->num_tuples = size ;
+	uint64_t i;
+	for (i=start;i<(size+start);i++)
+		out->tuples[i] = rel->tuples[i];
+	return 0;
+}
+
+
+
 void check_sorting(relation *rel,int length){  //checks if 'length' first elements of a relation are sorted, if length is 0, it sarches the whole
 	if (length == 0)
 		length = rel->num_tuples;
 	int i;
 	for(i=0;i<length-1;i++){
-		if(rel->tuples[i].key >= rel->tuples[i+1].key){
+		if(rel->tuples[i].key > rel->tuples[i+1].key){
 			printf("not sorted!\n");
 			return;
 		}
