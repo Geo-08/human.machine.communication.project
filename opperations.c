@@ -88,7 +88,7 @@ Result* query_comp_v2(TableStorage* store,query* qu, JobScheduler* jobScheduler)
 		pthread_mutex_destroy(&count_mutex) ;
 		sem_destroy(&sort_sem) ;
 		sem_destroy(&count_sem) ;
-		join_rels(inb,place,place2);//joins sorted relations
+		join_rels(inb,place,place2,jobScheduler);//joins sorted relations
 	}
 	uint64_t summ,j;
 	Result* out;
@@ -179,7 +179,7 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 			inb->rels[place2].sorted =0;
 		}
 		//printf("join rels should start\n");
-		join_rels(inb,place,place2);//joins sorted relations
+		//join_rels(inb,place,place2,job);//joins sorted relations
 	}
 	uint64_t summ,j;
 	uint64_t* out;
@@ -229,7 +229,7 @@ void equals(inbetween* inb,int place){
 	inb->rels[place]=temp;
 	//printf("exiting equals\n");
 }
-
+/*
 void join_rels(inbetween* inb,int place1,int place2){
 	uint64_t i,j,size,ts,ms,z,x,flag;
 	if(inb->rels[place1].num_tuples >  inb->rels[place2].num_tuples)
@@ -288,6 +288,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 					temp.tuples =(tuple*)realloc(temp.tuples,1000000*z);
 					z++;
 				}*/
+				/*
 				//if (temp.num_tuples>0)
 					//temp.tuples = (tuple*)realloc(temp.tuples,sizeof(tuple)*(temp.num_tuples+1));
 				temp.tuples[temp.num_tuples].payload = (uint64_t*)malloc(sizeof(uint64_t)*temp.num_ids);
@@ -305,7 +306,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 	temp.keycol = inb->rels[place1].keycol;
 	temp.sorted = inb->rels[place1].sorted;
 	/*for(i=0;i<inb->rels[place1].num_tuples;i++)
-		free(inb->rels[place1].tuples[i].payload);*/
+		free(inb->rels[place1].tuples[i].payload);*//*
 		free(inb->rels[place1].ids);
 		free(inb->rels[place1].tuples);
 	for(i=ms;i<inb->rels[place2].num_tuples;i++)
@@ -342,9 +343,9 @@ void join_rels(inbetween* inb,int place1,int place2){
 	free(inb->rels);
 	inb->rels = temps;
 
-}
+}*/
 
-/*
+//this is the pararllel join_rels
 void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler){
 	uint64_t i,j,size,ts,ms,z,x,flag;
 	if(inb->rels[place1].num_tuples >  inb->rels[place2].num_tuples)
@@ -360,6 +361,7 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 	for(i=0;i<inb->rels[place2].num_ids;i++)
 		temp.ids[i+inb->rels[place1].num_ids] = inb->rels[place2].ids[i];
 	//temp.tuples = (tuple*)malloc(sizeof(tuple)*size);
+	temp.num_tuples=0 ;
 	if (inb->rels[place1].num_tuples!=0  && inb->rels[place2].num_tuples!=0) {
 		int hist_size=pow(2,BITS) ;
 		uint64_t hist1[hist_size];
@@ -400,7 +402,7 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 	//		rel2[i]->tuples=(tuple*)malloc(inb->rels[place2].num_tuples);
 			rel2[i]->tuples=&(inb->rels[place2].tuples[start2]) ;
 			rel2[i]->num_tuples=end2-start2 ;
-			rel2[i]->num_ids= inb->rels[place2].num_ids ;
+			rel2[i]->num_ids= inb->rels[place2].num_ids ; 
 			result[i]->num_ids=rel1[i]->num_ids + rel2[i]->num_ids ;
 			if (i<(jobScheduler->num_of_join_jobs-1)) {
 				Job* job=JoinJobInit(result[i], rel1[i], rel2[i], &join_sem) ;
@@ -413,20 +415,40 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 		JoinBarrier(jobScheduler, jobScheduler->num_of_join_jobs-1, &join_sem) ;
 		sem_destroy(&join_sem) ;
 		uint64_t offset=0 ;
+		
 		for (i=0 ; i<jobScheduler->num_of_join_jobs ; i++) {
 			if (i==0)
-				temp.tuples=(tuple*)malloc((result[i]->num_tuples)*sizeof(tuple)) ;
+				temp.tuples=(tuple*)malloc(result[i]->num_tuples*sizeof(tuple)) ;
 			else
 				temp.tuples=realloc(temp.tuples, (result[i]->num_tuples+offset)*sizeof(tuple)) ;
-			memcpy(temp.tuples+offset, result[i]->tuples, result[i]->num_tuples*sizeof(tuple)) ;
+			
+			for (j=0 ; j<result[i]->num_tuples ; j++) {
+					temp.tuples[j+offset].payload = (uint64_t*)malloc(sizeof(uint64_t)*result[i]->num_ids);
+					temp.tuples[j+offset].key = result[i]->tuples[j].key ;
+				for (x=0 ; x<result[i]->num_ids ; x++) {
+					temp.tuples[j+offset].payload[x]=result[i]->tuples[j].payload[x] ;
+				}
+				free(result[i]->tuples[j].payload);
+			}
+			
+			temp.num_tuples+=result[i]->num_tuples ;
+			//memcpy(temp.tuples+offset, result[i]->tuples, result[i]->num_tuples*sizeof(tuple)) ;
 			offset+=result[i]->num_tuples ;
 			free(result[i]->tuples) ;
+			free(rel1[i]);
+			free(rel2[i]);
+			free(result[i]);
 		}
 		free(rel1) ;
 		free(rel2) ;
 		free(result) ;
 	}
-	
+	else{
+		for(i=0;i<inb->rels[place1].num_tuples;i++)
+			free(inb->rels[place1].tuples[i].payload);
+		for(i=0;i<inb->rels[place2].num_tuples;i++)
+			free(inb->rels[place2].tuples[i].payload);
+	}	
 	//join(&temp, &(inb->rels[place1]), &(inb->rels[place2])) ;
 	temp.keyid = inb->rels[place1].keyid;
 	temp.keycol = inb->rels[place1].keycol;
@@ -434,10 +456,12 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 	//for(i=0;i<inb->rels[place1].num_tuples;i++)
 	//	free(inb->rels[place1].tuples[i].payload);
 		free(inb->rels[place1].ids);
+	if(inb->rels[place1].num_tuples!=0)
 		free(inb->rels[place1].tuples);
-	for(i=ms;i<inb->rels[place2].num_tuples;i++)
-		free(inb->rels[place2].tuples[i].payload);
+	//for(i=ms;i<inb->rels[place2].num_tuples;i++)
+	//	free(inb->rels[place2].tuples[i].payload);
 		free(inb->rels[place2].ids);
+	if(inb->rels[place2].num_tuples!=0)
 		free(inb->rels[place2].tuples);
 	inb->num--;
 	i=0;
@@ -468,8 +492,9 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 	}
 	free(inb->rels);
 	inb->rels = temps;
+	//printf("%" PRId64 "\n", temp.num_tuples);
 
-}*/
+}
 
 
 void join(relation* result, relation* rel1, relation* rel2) {
@@ -503,6 +528,8 @@ void join(relation* result, relation* rel1, relation* rel2) {
 		}
 		free(rel1->tuples[i].payload);
 	}
+	for(i=ms;i<rel2->num_tuples;i++)
+		free(rel2->tuples[i].payload);
 }
 
 
@@ -522,8 +549,10 @@ void lower_than (inbetween* inb,int place,uint64_t fil){
 		free(inb->rels[place].tuples[i].payload);
 	}
 	inb->rels[place].num_tuples=num;
-	free(inb->rels[place].tuples);
-	inb->rels[place].tuples = temp;
+	if(num == 0)
+		free(temp);
+	else
+		inb->rels[place].tuples = temp;
 }
 
 void bigger_than (inbetween* inb,int place,uint64_t fil){
@@ -543,7 +572,10 @@ void bigger_than (inbetween* inb,int place,uint64_t fil){
 	}
 	inb->rels[place].num_tuples=num;
 	free(inb->rels[place].tuples);
-	inb->rels[place].tuples = temp;
+	if(num == 0)
+		free(temp);
+	else
+		inb->rels[place].tuples = temp;
 }
 
 void equal_to (inbetween* inb,int place,uint64_t fil){
@@ -563,11 +595,15 @@ void equal_to (inbetween* inb,int place,uint64_t fil){
 	}
 	inb->rels[place].num_tuples=num;
 	free(inb->rels[place].tuples);
-	inb->rels[place].tuples = temp;
+	if(num == 0)
+		free(temp);
+	else
+		inb->rels[place].tuples = temp;
 }
 
 void col_to_key(inbetween* inb,int place,uint64_t* col,int name){
 	int i,j;
+
 	for(i=0;i<inb->rels[place].num_ids;i++){
 		if(inb->rels[place].ids[i] == name)
 			break;
@@ -630,8 +666,8 @@ void delete_inb(inbetween* inb){
 	for(i=0;i<inb->num;i++){
 		for(j=0;j<inb->rels[i].num_tuples;j++)
 				free(inb->rels[i].tuples[j].payload);
-		
-		free(inb->rels[i].tuples);
+		if(inb->rels[i].num_tuples != 0)
+			free(inb->rels[i].tuples);
 		free(inb->rels[i].ids);
 	}
 	free(inb->rels);
