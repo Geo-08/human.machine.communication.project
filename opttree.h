@@ -3,6 +3,11 @@
 
 #include "opperations.h"
 
+typedef struct unity unity ;
+typedef struct query query ;
+typedef struct statistic statistic ;
+typedef struct TableStorage TableStorage ;
+
 typedef struct rs{ 
 	int* ids;
 	int id_num;
