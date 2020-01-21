@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 
-int sort(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* count, JobScheduler* jobScheduler, sem_t* count_sem){
+int sort_v2(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* count, JobScheduler* jobScheduler, sem_t* count_sem){
 	if (rel==NULL || rel->num_tuples==0) {	//if the relation is empty or NULL 
 		pthread_mutex_lock(count_mutex) ;
 		(*count)++ ;
@@ -74,6 +74,35 @@ int sort(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* coun
 	free(rel2);
 	return 0;
 }
+
+int sort(relation *rel){
+	if (rel==NULL || rel->num_tuples==0) {	//if the relation is empty or NULL 
+		return 0 ;
+	}
+	if (rel->num_tuples*16 < MAXS){//if the relation is small on it's own jump straight into qucksort
+		quicksort (rel,0,(rel->num_tuples-1));
+		return 0;
+	}
+	relation *rel2;
+	rel2 = (relation*)malloc(sizeof (relation));
+	if(rel2==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return -1 ;
+	}
+	rel2->tuples = (tuple*)malloc(sizeof(tuple)*rel->num_tuples);
+	if(rel2->tuples==NULL) {
+		printf("Error:Memory not allocated.") ;
+		return -1 ;
+	}
+	rel2->num_tuples = rel->num_tuples;
+	radix_sort(rel,rel2,0,0);
+	rel->num_tuples = rel2->num_tuples; 
+	copy_relation(rel,0,rel2->num_tuples,rel2);
+	free(rel2->tuples);
+	free(rel2);
+	return 0;
+}
+
 
 int radix_sort(relation *rel,relation *rel2, int depth,uint64_t start){	//call it with depth argument value 0, rel will point at a sorted relation at the end.
 	int size = pow(2,BITS);
