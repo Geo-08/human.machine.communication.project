@@ -3,6 +3,13 @@
 
 #include "sortmj.h"
 #include "tableStorage.h"
+#include "jobScheduler.h"
+#include "job.h"
+#include <semaphore.h>
+#include <math.h>
+
+typedef struct JobScheduler JobScheduler ;
+typedef struct Result Result ;
 
 typedef struct inbetween{
 	relation* rels;
@@ -40,8 +47,9 @@ typedef struct query{
 void print_inb(inbetween* inb);
 void equals(inbetween* inb,int place);
 void join_rels(inbetween* inb,int place1,int place2);
+void join(relation* result, relation* rel1, relation* rel2) ;
 
-uint64_t* query_comp_v2(TableStorage* store,query* qu);
+Result* query_comp_v2(TableStorage* store,query* qu,JobScheduler* jobScheduler);
 uint64_t* query_comp(TableStorage* store,char* tq);
 void lower_than (inbetween* inb,int place,uint64_t fil);
 void bigger_than (inbetween* inb,int place,uint64_t fil);
