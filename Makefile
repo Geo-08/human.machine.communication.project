@@ -1,4 +1,4 @@
-ALL 		= project2 script cmp main.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o opttree.o Tests.o job.o jobScheduler.o
+ALL 		= project3 script cmp main.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o opttree.o Tests.o job.o jobScheduler.o
 OBJS 		= main.o relation.o sortmj.o tuple.o opperations.o tableStorage.o opttree.o job.o jobScheduler.o
 TESTOBJS 	= Tests.o CuTest.o relation.o sortmj.o tuple.o opperations.o tableStorage.o opttree.o job.o jobScheduler.o
 OUT  		= project3
