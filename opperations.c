@@ -4,11 +4,7 @@
 
 //int gcounter =0;
 
-uint64_t* query_comp_v2(TableStorage* store,query* qu){
-	/*query* qu;
-	query_init(&qu);
-	read_query(qu,tq);
-	//optimise_query(qu) ;*/
+Result* query_comp_v2(TableStorage* store,query* qu, JobScheduler* jobScheduler){
 	inbetween* inb;
 	inb_init(&inb);
 	int i,place;
@@ -64,20 +60,41 @@ uint64_t* query_comp_v2(TableStorage* store,query* qu){
 			inb->rels[place2].keyid = qu->unitys[i].rel2.rel;
 			inb->rels[place2].keycol = colnum2;
 		}
+		Job* job ;
+		int count=0 ;
+		int sortCount=0 ;
+		sem_t sort_sem ;
+		sem_init(&sort_sem, 0, 0) ;
+		sem_t count_sem ;
+		sem_init(&count_sem, 0, 0) ;
+		pthread_mutex_t count_mutex ;
+		pthread_mutex_init(&count_mutex, NULL) ;
 		if(inb->rels[place].sorted == -1){//Checking if the first relation has been already sorted by it's key
-			sort(&(inb->rels[place]));
+			sortCount++ ;
+			job=SortJobInit(&(inb->rels[place]), &sort_sem, &count_mutex, &count, &count_sem) ;
+			Schedule(jobScheduler, job) ;
 			inb->rels[place].sorted =0;
 		}
 		if(inb->rels[place2].sorted == -1){//Same for the other.
-			sort(&(inb->rels[place2]));
+			sortCount++ ;
+			job=SortJobInit(&(inb->rels[place2]), &sort_sem, &count_mutex, &count, &count_sem) ;
+			Schedule(jobScheduler, job) ;
 			inb->rels[place2].sorted =0;
 		}
-		//printf("join rels should start\n");
+		int k ;
+		for (k=0 ; k<sortCount ; k++)
+			sem_wait(&count_sem) ;
+		SortBarrier(jobScheduler, count, &sort_sem) ;
+		pthread_mutex_destroy(&count_mutex) ;
+		sem_destroy(&sort_sem) ;
+		sem_destroy(&count_sem) ;
 		join_rels(inb,place,place2);//joins sorted relations
 	}
 	uint64_t summ,j;
-	uint64_t* out;
-	out = (uint64_t*)malloc(sizeof(uint64_t)*qu->snum);
+	Result* out;
+	out=malloc(sizeof(Result)) ;
+	out->results = (uint64_t*)malloc(sizeof(uint64_t)*qu->snum);
+	out->number=qu->snum ;
 	for(i=0;i<qu->snum;i++){//calculates sums
 		relnum = qu->relation_numbers[qu->sums[i].rel];
 		colnum = qu->sums[i].col;
@@ -86,20 +103,12 @@ uint64_t* query_comp_v2(TableStorage* store,query* qu){
 		summ=0;
 		for(j=0;j<inb->rels[place].num_tuples;j++)
 			summ = summ + inb->rels[place].tuples[j].key;
-		out[i] = summ;
-		if(summ == 0)
-			printf("NULL ");
-		else
-			printf("%" PRIu64" ",summ);		 
+		out->results[i] = summ;	 
 	}
-	printf("\n");
 	delete_inb(inb);
 	delete_query(qu);
-	//in case there is a need for the function to actually return the results, comment free(out); and remove comment from return out; out should be freed out of the function if that happens.
-	//free(out);
-	return out;
+	return out ;
 }
-
 
 uint64_t* query_comp(TableStorage* store,char* tq){
 	query* qu;
@@ -183,19 +192,13 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 		summ=0;
 		for(j=0;j<inb->rels[place].num_tuples;j++)
 			summ = summ + inb->rels[place].tuples[j].key;
-		out[i] = summ;
-		if(summ == 0)
-			printf("NULL ");
-		else
-			printf("%" PRIu64" ",summ);		 
+		out[i] = summ; 
 	}
-	printf("\n");
 	delete_inb(inb);
 	delete_query(qu);
-	//in case there is a need for the function to actually return the results, comment free(out); and remove comment from return out; out should be freed out of the function if that happens.
-	//free(out);
 	return out;
 }
+
 
 void equals(inbetween* inb,int place){
 	uint64_t i,j;
@@ -252,6 +255,8 @@ void join_rels(inbetween* inb,int place1,int place2){
 			if(inb->rels[place1].tuples[i].key < inb->rels[place2].tuples[j].key)
 				break;
 			if(inb->rels[place1].tuples[i].key > inb->rels[place2].tuples[j].key){
+			//	printf("num1:%" PRIu64", num2:%" PRIu64 "\n", inb->rels[place1].num_tuples, inb->rels[place2].num_tuples) ;
+			//	printf("i:%" PRIu64", j:%" PRIu64 "\n", i, j) ;
 				free(inb->rels[place2].tuples[j].payload);
 				ms = j+1;
 				continue;	
@@ -338,6 +343,168 @@ void join_rels(inbetween* inb,int place1,int place2){
 	inb->rels = temps;
 
 }
+
+/*
+void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler){
+	uint64_t i,j,size,ts,ms,z,x,flag;
+	if(inb->rels[place1].num_tuples >  inb->rels[place2].num_tuples)
+		size = inb->rels[place2].num_tuples;
+	else
+		size = inb->rels[place1].num_tuples;
+	ts = size/2;
+	relation temp;
+	temp.num_ids = inb->rels[place1].num_ids + inb->rels[place2].num_ids;
+	temp.ids = (int*)malloc(sizeof(int)*(temp.num_ids));
+	for(i=0;i<inb->rels[place1].num_ids;i++)
+		temp.ids[i] = inb->rels[place1].ids[i];
+	for(i=0;i<inb->rels[place2].num_ids;i++)
+		temp.ids[i+inb->rels[place1].num_ids] = inb->rels[place2].ids[i];
+	//temp.tuples = (tuple*)malloc(sizeof(tuple)*size);
+	if (inb->rels[place1].num_tuples!=0  && inb->rels[place2].num_tuples!=0) {
+		int hist_size=pow(2,BITS) ;
+		uint64_t hist1[hist_size];
+
+		create_hist(&(inb->rels[place1]),hist1,0);
+		uint64_t psum1[hist_size]; 
+		create_psum(hist1,psum1,0);
+		uint64_t hist2[hist_size];
+		create_hist(&inb->rels[place2],hist2,0);
+		uint64_t psum2[hist_size]; 
+		create_psum(hist2,psum2,0);
+		sem_t join_sem ;
+		sem_init(&join_sem, 0, 0) ;
+		relation** rel1=malloc(sizeof(relation*)*jobScheduler->num_of_join_jobs) ;
+		relation** rel2=malloc(sizeof(relation*)*jobScheduler->num_of_join_jobs) ;
+		relation** result=malloc(sizeof(relation*)*jobScheduler->num_of_join_jobs) ;
+		int chunk_size=hist_size/jobScheduler->num_of_join_jobs ;
+		int remaining=hist_size-chunk_size*jobScheduler->num_of_join_jobs ;
+		uint64_t start1=0, start2=0 ;
+		uint64_t end1, end2 ;
+		for (i=0 ; i<jobScheduler->num_of_join_jobs ; i++) {
+			if (remaining>0) {
+				end1=psum1[(i+1)*chunk_size]+hist1[(i+1)*chunk_size] ;
+				end2=psum2[(i+1)*chunk_size]+hist2[(i+1)*chunk_size] ;
+				remaining-- ;
+			}
+			else {
+				end1=psum1[((i+1)*chunk_size)-1]+hist1[((i+1)*chunk_size)-1] ;
+				end2=psum2[((i+1)*chunk_size)-1]+hist2[((i+1)*chunk_size)-1] ;
+			}
+			result[i]=(relation*)malloc(sizeof(relation)) ;
+			rel1[i]=(relation*)malloc(sizeof(relation)) ;
+	//		rel1[i]->tuples=(tuple*)malloc(inb->rels[place1].num_tuples);
+			rel1[i]->tuples=&(inb->rels[place1].tuples[start1]) ;
+			rel1[i]->num_tuples=end1-start1 ;
+			rel1[i]->num_ids=inb->rels[place1].num_ids ;
+			rel2[i]=(relation*)malloc(sizeof(relation)) ;
+	//		rel2[i]->tuples=(tuple*)malloc(inb->rels[place2].num_tuples);
+			rel2[i]->tuples=&(inb->rels[place2].tuples[start2]) ;
+			rel2[i]->num_tuples=end2-start2 ;
+			rel2[i]->num_ids= inb->rels[place2].num_ids ;
+			result[i]->num_ids=rel1[i]->num_ids + rel2[i]->num_ids ;
+			if (i<(jobScheduler->num_of_join_jobs-1)) {
+				Job* job=JoinJobInit(result[i], rel1[i], rel2[i], &join_sem) ;
+				Schedule(jobScheduler, job) ;
+				start1=end1 ;
+				start2=end2 ;
+			}
+		}
+		join(result[i-1], rel1[i-1], rel2[i-1]) ;
+		JoinBarrier(jobScheduler, jobScheduler->num_of_join_jobs-1, &join_sem) ;
+		sem_destroy(&join_sem) ;
+		uint64_t offset=0 ;
+		for (i=0 ; i<jobScheduler->num_of_join_jobs ; i++) {
+			if (i==0)
+				temp.tuples=(tuple*)malloc((result[i]->num_tuples)*sizeof(tuple)) ;
+			else
+				temp.tuples=realloc(temp.tuples, (result[i]->num_tuples+offset)*sizeof(tuple)) ;
+			memcpy(temp.tuples+offset, result[i]->tuples, result[i]->num_tuples*sizeof(tuple)) ;
+			offset+=result[i]->num_tuples ;
+			free(result[i]->tuples) ;
+		}
+		free(rel1) ;
+		free(rel2) ;
+		free(result) ;
+	}
+	
+	//join(&temp, &(inb->rels[place1]), &(inb->rels[place2])) ;
+	temp.keyid = inb->rels[place1].keyid;
+	temp.keycol = inb->rels[place1].keycol;
+	temp.sorted = inb->rels[place1].sorted;
+	//for(i=0;i<inb->rels[place1].num_tuples;i++)
+	//	free(inb->rels[place1].tuples[i].payload);
+		free(inb->rels[place1].ids);
+		free(inb->rels[place1].tuples);
+	for(i=ms;i<inb->rels[place2].num_tuples;i++)
+		free(inb->rels[place2].tuples[i].payload);
+		free(inb->rels[place2].ids);
+		free(inb->rels[place2].tuples);
+	inb->num--;
+	i=0;
+	flag =0;
+	relation* temps;
+	temps = (relation*)malloc(sizeof(relation)*inb->num);
+	for(i=0;i<inb->num;i++){
+		if(flag == 2){
+			temps[i] = inb->rels[i+1];
+		}
+		if(flag ==0){
+			if(i == place1 || i == place2){
+				temps[i] = temp;
+				flag++;
+			}
+			else
+				temps[i] = inb->rels[i];
+		}
+		else if(flag == 1){
+			if(i == place1 || i == place2){
+				temps[i] = inb->rels[i+1];
+				flag++;
+				continue;
+			}
+			else
+				temps[i] = inb->rels[i];
+		}
+	}
+	free(inb->rels);
+	inb->rels = temps;
+
+}*/
+
+
+void join(relation* result, relation* rel1, relation* rel2) {
+	uint64_t i, j, ms, z, x ;
+	result->tuples = (tuple*)malloc(128000);
+	result->num_tuples = 0;
+	ms=0;
+	z=1;
+	for(i=0;i<rel1->num_tuples;i++){
+		for(j=ms;j<rel2->num_tuples;j++){
+			if(rel1->tuples[i].key < rel2->tuples[j].key)
+				break;
+			if(rel1->tuples[i].key > rel2->tuples[j].key){
+				free(rel2->tuples[j].payload);
+				ms = j+1;
+				continue;	
+			}
+			if(rel1->tuples[i].key == rel2->tuples[j].key){
+				if((result->num_tuples+1) * sizeof(tuple) > z*128000){
+					z++;
+					result->tuples =(tuple*)realloc(result->tuples,128000*z);
+				}
+				result->tuples[result->num_tuples].payload = (uint64_t*)malloc(sizeof(uint64_t)*result->num_ids);
+				result->tuples[result->num_tuples].key = rel1->tuples[i].key;
+				for(x=0;x<rel1->num_ids;x++)
+					result->tuples[result->num_tuples].payload[x] = rel1->tuples[i].payload[x];
+				for(x=0;x<rel2->num_ids;x++)
+					result->tuples[result->num_tuples].payload[x+rel1->num_ids] = rel2->tuples[j].payload[x];
+				result->num_tuples++;
+			}
+		}
+		free(rel1->tuples[i].payload);
+	}
+}
+
 
 void lower_than (inbetween* inb,int place,uint64_t fil){
 	int i,j;
