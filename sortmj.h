@@ -25,7 +25,9 @@ void printresult(buffer *Buff);
 void deletebuffer(buffer *Buff);
 */
 
-int sort(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* count, JobScheduler* jobScheduler, sem_t* count_sem);
+int sort_v2(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* count, JobScheduler* jobScheduler, sem_t* count_sem);
+
+int sort(relation *rel) ;
 
 int radix_sort(relation *rel,relation *rel2,int depth,uint64_t start);
 
