@@ -226,6 +226,8 @@ void equals(inbetween* inb,int place){
 		free(inb->rels[place].tuples[i].payload);*/
 		free(inb->rels[place].ids);
 		free(inb->rels[place].tuples);
+	if(temp.num_tuples == 0)
+		free(temp.tuples);
 	inb->rels[place]=temp;
 	//printf("exiting equals\n");
 }
@@ -549,6 +551,7 @@ void lower_than (inbetween* inb,int place,uint64_t fil){
 		free(inb->rels[place].tuples[i].payload);
 	}
 	inb->rels[place].num_tuples=num;
+	free(inb->rels[place].tuples);
 	if(num == 0)
 		free(temp);
 	else
@@ -880,8 +883,10 @@ void query_swap(unity* a, unity* b) {
 
 void delete_query(query* qu){
 	free(qu->relation_numbers);
-	free(qu->filters);
-	free(qu->unitys);
+	if(qu->fnum != 0)
+		free(qu->filters);
+	if(qu->unum != 0)
+		free(qu->unitys);
 	free(qu->sums);
 	free(qu);
 }
