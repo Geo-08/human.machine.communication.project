@@ -420,6 +420,14 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 				temp.tuples=(tuple*)malloc(result[i]->num_tuples*sizeof(tuple)) ;
 			else
 				temp.tuples=realloc(temp.tuples, (result[i]->num_tuples+offset)*sizeof(tuple)) ;
+			
+			for (j=0 ; j<result[i]->num_tuples ; j++) {
+					temp.tuples[j+offset].payload = (uint64_t*)malloc(sizeof(uint64_t)*result[i]->num_ids);
+					temp.tuples[j+offset].key = result[i]->tuples[j].key ;
+				for (x=0 ; x<result[i]->num_ids ; x++) {
+					temp.tuples[j+offset].payload[x]=result[i]->tuples[j].payload[x] ;
+				}
+			}
 			temp.num_tuples+=result[i]->num_tuples ;
 			memcpy(temp.tuples+offset, result[i]->tuples, result[i]->num_tuples*sizeof(tuple)) ;
 			offset+=result[i]->num_tuples ;
