@@ -427,11 +427,15 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 				for (x=0 ; x<result[i]->num_ids ; x++) {
 					temp.tuples[j+offset].payload[x]=result[i]->tuples[j].payload[x] ;
 				}
+				free(result[i]->tuples[j].payload);
 			}
 			temp.num_tuples+=result[i]->num_tuples ;
-			memcpy(temp.tuples+offset, result[i]->tuples, result[i]->num_tuples*sizeof(tuple)) ;
+			//memcpy(temp.tuples+offset, result[i]->tuples, result[i]->num_tuples*sizeof(tuple)) ;
 			offset+=result[i]->num_tuples ;
 			free(result[i]->tuples) ;
+			free(rel1[i]);
+			free(rel2[i]);
+			free(result[i]);
 		}
 		free(rel1) ;
 		free(rel2) ;
@@ -566,8 +570,8 @@ void equal_to (inbetween* inb,int place,uint64_t fil){
 	int num =0;
 	for(i=0;i<inb->rels[place].num_tuples;i++){
 		if(inb->rels[place].tuples[i].key == fil){
-			//temp[num].key = inb->rels[place].tuples[i].key;
-			//temp[num].payload = (uint64_t*)malloc(sizeof(uint64_t)*inb->rels[place].num_ids);
+			temp[num].key = inb->rels[place].tuples[i].key;
+			temp[num].payload = (uint64_t*)malloc(sizeof(uint64_t)*inb->rels[place].num_ids);
 			for(j=0;j<inb->rels[place].num_ids;j++)
 				temp[num].payload[j] = inb->rels[place].tuples[i].payload[j];
 			num++;
