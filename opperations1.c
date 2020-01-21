@@ -88,7 +88,7 @@ Result* query_comp_v2(TableStorage* store,query* qu, JobScheduler* jobScheduler)
 		pthread_mutex_destroy(&count_mutex) ;
 		sem_destroy(&sort_sem) ;
 		sem_destroy(&count_sem) ;
-		join_rels(inb,place,place2);//joins sorted relations
+		join_rels(inb,place,place2,jobScheduler);//joins sorted relations
 	}
 	uint64_t summ,j;
 	Result* out;
@@ -179,7 +179,7 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 			inb->rels[place2].sorted =0;
 		}
 		//printf("join rels should start\n");
-		join_rels(inb,place,place2);//joins sorted relations
+		//join_rels(inb,place,place2,job);//joins sorted relations
 	}
 	uint64_t summ,j;
 	uint64_t* out;
@@ -288,6 +288,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 					temp.tuples =(tuple*)realloc(temp.tuples,1000000*z);
 					z++;
 				}*/
+				/*
 				//if (temp.num_tuples>0)
 					//temp.tuples = (tuple*)realloc(temp.tuples,sizeof(tuple)*(temp.num_tuples+1));
 				temp.tuples[temp.num_tuples].payload = (uint64_t*)malloc(sizeof(uint64_t)*temp.num_ids);
@@ -305,7 +306,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 	temp.keycol = inb->rels[place1].keycol;
 	temp.sorted = inb->rels[place1].sorted;
 	/*for(i=0;i<inb->rels[place1].num_tuples;i++)
-		free(inb->rels[place1].tuples[i].payload);*/
+		free(inb->rels[place1].tuples[i].payload);*//*
 		free(inb->rels[place1].ids);
 		free(inb->rels[place1].tuples);
 	for(i=ms;i<inb->rels[place2].num_tuples;i++)
@@ -435,8 +436,8 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 	//	free(inb->rels[place1].tuples[i].payload);
 		free(inb->rels[place1].ids);
 		free(inb->rels[place1].tuples);
-	for(i=ms;i<inb->rels[place2].num_tuples;i++)
-		free(inb->rels[place2].tuples[i].payload);
+	//for(i=ms;i<inb->rels[place2].num_tuples;i++)
+	//	free(inb->rels[place2].tuples[i].payload);
 		free(inb->rels[place2].ids);
 		free(inb->rels[place2].tuples);
 	inb->num--;
@@ -503,6 +504,8 @@ void join(relation* result, relation* rel1, relation* rel2) {
 		}
 		free(rel1->tuples[i].payload);
 	}
+	for(i=ms;i<rel2->num_tuples;i++)
+		free(rel2->tuples[i].payload);
 }
 
 

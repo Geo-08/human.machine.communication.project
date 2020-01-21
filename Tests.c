@@ -49,7 +49,7 @@ void Test_exec_pred_dif(CuTest* tc);
 void Test_exec_pred_same(CuTest* tc);
 void Test_exec_pred_self(CuTest* tc);
 
-void RunAllTests(void) {
+/*void RunAllTests(void) {
 	CuString *output = CuStringNew();
 	CuSuite* suite = CuSuiteNew();
 
@@ -60,11 +60,11 @@ void RunAllTests(void) {
 	CuSuiteDetails(suite, output);
 	printf("%s\n", output->buffer);
 }
-
+*/
 int main(void) {
-	RunAllTests();
+//	RunAllTests();
 }
-
+/*
 CuSuite* CuGetSuite_opperations(void)
 {
 	CuSuite* suite = CuSuiteNew() ;
@@ -734,3 +734,5 @@ void Test_exec_pred_self(CuTest* tc){
 	delete_tree(nod);
 	deleteTableStorage(tableStorage);	
 }
+
+*/
