@@ -88,7 +88,7 @@ Result* query_comp_v2(TableStorage* store,query* qu, JobScheduler* jobScheduler)
 		pthread_mutex_destroy(&count_mutex) ;
 		sem_destroy(&sort_sem) ;
 		sem_destroy(&count_sem) ;
-		join_rels(inb,place,place2,jobScheduler);//joins sorted relations
+		join_rels_v2(inb,place,place2,jobScheduler);//joins sorted relations
 	}
 	uint64_t summ,j;
 	Result* out;
@@ -179,7 +179,7 @@ uint64_t* query_comp(TableStorage* store,char* tq){
 			inb->rels[place2].sorted =0;
 		}
 		//printf("join rels should start\n");
-		//join_rels(inb,place,place2,job);//joins sorted relations
+		join_rels(inb,place,place2);//joins sorted relations
 	}
 	uint64_t summ,j;
 	uint64_t* out;
@@ -231,7 +231,7 @@ void equals(inbetween* inb,int place){
 	inb->rels[place]=temp;
 	//printf("exiting equals\n");
 }
-/*
+
 void join_rels(inbetween* inb,int place1,int place2){
 	uint64_t i,j,size,ts,ms,z,x,flag;
 	if(inb->rels[place1].num_tuples >  inb->rels[place2].num_tuples)
@@ -268,29 +268,6 @@ void join_rels(inbetween* inb,int place1,int place2){
 					z++;
 					temp.tuples =(tuple*)realloc(temp.tuples,1000000*z);
 				}
-				/*if(temp.num_tuples == size*(z-1)){
-					/*size = size + ts;
-					printf("%" PRIu64" ",size);
-					printf("%" PRIu64" ",ts);
-					temp.tuples =(tuple*)realloc(temp.tuples,sizeof(tuple)*size*z);
-					z++;
-				}
-				/*if(temp.num_tuples == (size+((z-1)*ts)) ){
-					/*size = size + ts;
-					printf("%" PRIu64" ",size);
-					printf("%" PRIu64" ",ts);
-					//temp.tuples =(tuple*)realloc(temp.tuples,sizeof(tuple)*(size+(ts*z)) );
-					if ((temp.tuples =(tuple*)realloc(temp.tuples,sizeof(tuple)*(size+(ts*z)) )) == NULL){
-					   perror("socket failed");
-					   exit(EXIT_FAILURE);
-					}
-					z++;
-				}*/
-				/*if(temp.num_tuples == 41665*z){
-					temp.tuples =(tuple*)realloc(temp.tuples,1000000*z);
-					z++;
-				}*/
-				/*
 				//if (temp.num_tuples>0)
 					//temp.tuples = (tuple*)realloc(temp.tuples,sizeof(tuple)*(temp.num_tuples+1));
 				temp.tuples[temp.num_tuples].payload = (uint64_t*)malloc(sizeof(uint64_t)*temp.num_ids);
@@ -308,7 +285,7 @@ void join_rels(inbetween* inb,int place1,int place2){
 	temp.keycol = inb->rels[place1].keycol;
 	temp.sorted = inb->rels[place1].sorted;
 	/*for(i=0;i<inb->rels[place1].num_tuples;i++)
-		free(inb->rels[place1].tuples[i].payload);*//*
+		free(inb->rels[place1].tuples[i].payload);*/
 		free(inb->rels[place1].ids);
 		free(inb->rels[place1].tuples);
 	for(i=ms;i<inb->rels[place2].num_tuples;i++)
@@ -345,10 +322,10 @@ void join_rels(inbetween* inb,int place1,int place2){
 	free(inb->rels);
 	inb->rels = temps;
 
-}*/
+}
 
 //this is the pararllel join_rels
-void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler){
+void join_rels_v2(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler){
 	uint64_t i,j,size,ts,ms,z,x,flag;
 	if(inb->rels[place1].num_tuples >  inb->rels[place2].num_tuples)
 		size = inb->rels[place2].num_tuples;
