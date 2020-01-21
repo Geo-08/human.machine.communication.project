@@ -55,16 +55,16 @@ Tests.o: Tests.c
 
 
 run_small: $(OUT)
-	./script small | ./project2
+	./script small | ./project3
 
 run_small_cmp: $(OUT)
-	./script small | ./project2 | ./cmp small
+	./script small | ./project3 | ./cmp small
 
 run_medium: $(OUT)
-	./script medium | ./project2
+	./script medium | ./project3
 
 run_medium_cmp: $(OUT)
-	./script medium | ./project2 | ./cmp medium
+	./script medium | ./project3 | ./cmp medium
 
 clean:
 	rm -f $(ALL)
