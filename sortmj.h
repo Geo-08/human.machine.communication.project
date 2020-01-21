@@ -27,6 +27,8 @@ void deletebuffer(buffer *Buff);
 
 int sort_v2(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* count, JobScheduler* jobScheduler, sem_t* count_sem);
 
+int sort(relation *rel) ;
+
 int radix_sort(relation *rel,relation *rel2,int depth,uint64_t start);
 
 int radix_sort_v2(relation *rel,relation *rel2,int depth,uint64_t start,uint64_t end);
@@ -43,8 +45,5 @@ int create_hist_v2 (relation *rel,uint64_t* hist,int n,uint64_t start,uint64_t e
 
 int create_psum (uint64_t *hist,uint64_t* psum,uint64_t start);
 
-int sort(relation *rel);
-
-void getSize (uint64_t* hist, uint64_t* start, uint64_t* end) ;
 
 #endif
