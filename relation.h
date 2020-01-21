@@ -35,6 +35,7 @@ void deleteRelation(relation*);
 
 int isolate(relation *rel,uint64_t start,uint64_t size,relation *out);
 
+int isolate_v2(relation *rel,uint64_t start,uint64_t size,relation *out);
 
 void check_sorting(relation *rel,int length);
 
