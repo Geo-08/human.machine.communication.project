@@ -354,7 +354,7 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 		size = inb->rels[place1].num_tuples;
 	ts = size/2;
 	relation temp;
-	//temp.num_ids = inb->rels[place1].num_ids + inb->rels[place2].num_ids;
+	temp.num_ids = inb->rels[place1].num_ids + inb->rels[place2].num_ids;
 	temp.ids = (int*)malloc(sizeof(int)*(temp.num_ids));
 	for(i=0;i<inb->rels[place1].num_ids;i++)
 		temp.ids[i] = inb->rels[place1].ids[i];
@@ -417,7 +417,7 @@ void join_rels(inbetween* inb,int place1,int place2, JobScheduler* jobScheduler)
 		temp.num_tuples=0 ;
 		for (i=0 ; i<jobScheduler->num_of_join_jobs ; i++) {
 			if (i==0)
-				temp.tuples=(tuple*)malloc(1000000000) ;
+				temp.tuples=(tuple*)malloc(result[i]->num_tuples*sizeof(tuple)) ;
 			else
 				temp.tuples=realloc(temp.tuples, (result[i]->num_tuples+offset)*sizeof(tuple)) ;
 			temp.num_tuples+=result[i]->num_tuples ;
