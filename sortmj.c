@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 
-int sort_v2(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* count, JobScheduler* jobScheduler, sem_t* count_sem){
+int sort(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* count, JobScheduler* jobScheduler, sem_t* count_sem){
 	if (rel==NULL || rel->num_tuples==0) {	//if the relation is empty or NULL 
 		pthread_mutex_lock(count_mutex) ;
 		(*count)++ ;
@@ -51,17 +51,16 @@ int sort_v2(relation *rel, sem_t* sort_sem, pthread_mutex_t* count_mutex, int* c
 	}
 	create_psum(hist,psum,0);
 	uint64_t start=0 ;
-	uint64_t startH, end, endH ;
-	getSize(hist, &start, &endH) ;
-	int chunk_size=(endH-startH)/num_of_jobs ;
+	uint64_t end ;
+	int chunk_size=size/num_of_jobs ;
 	int remaining=size-chunk_size*num_of_jobs ;
 	for (i=0 ; i<(num_of_jobs-1) ; i++) {
 		if (remaining>0) {
-			end=psum[startH+(i+1)*chunk_size]+hist[(i+1)*chunk_size] ;
+			end=psum[(i+1)*chunk_size]+hist[(i+1)*chunk_size] ;
 			remaining-- ;
 		}
 		else
-			end=psum[startH+((i+1)*chunk_size)-1]+hist[((i+1)*chunk_size)-1];
+			end=psum[((i+1)*chunk_size)-1]+hist[((i+1)*chunk_size)-1];
 		Job* job=RadixSortJobInit(rel, rel2, sort_sem, start, end, &radix_sort_sem) ;
 		Schedule(jobScheduler, job) ;
 		start=end ;
@@ -203,53 +202,5 @@ void swap(tuple *a,tuple *b){
 	t = *a;
 	*a = *b;
 	*b = t;
-}
-
-
-int sort(relation *rel){
-	if (rel==NULL || rel->num_tuples==0) {	//if the relation is empty or NULL 
-		return 0 ;
-	}
-	if (rel->num_tuples*16 < MAXS){//if the relation is small on it's own jump straight into qucksort
-		quicksort (rel,0,(rel->num_tuples-1));
-		return 0;
-	}
-	relation *rel2;
-	rel2 = (relation*)malloc(sizeof (relation));
-	if(rel2==NULL) {
-		printf("Error:Memory not allocated.") ;
-		return -1 ;
-	}
-	rel2->tuples = (tuple*)malloc(sizeof(tuple)*rel->num_tuples);
-	if(rel2->tuples==NULL) {
-		printf("Error:Memory not allocated.") ;
-		return -1 ;
-	}
-	rel2->num_tuples = rel->num_tuples;
-	radix_sort(rel,rel2,0,0);
-	rel->num_tuples = rel2->num_tuples; 
-	copy_relation(rel,0,rel2->num_tuples,rel2);
-	free(rel2->tuples);
-	free(rel2);
-	return 0;
-}
-
-
-
-void getSize (uint64_t* hist, uint64_t* start, uint64_t* end) {
-	int i;
-	int flag=0 ;
-	*start=0 ;
-	*end=0 ;
-	for (i = 0 ; i < pow(2,BITS) ; i++){
-		if (hist[i]==0 && flag==0) {
-			*start=i ;
-		}
-		else {
-			*end=i ;
-			if (flag==0)
-				flag=1 ;
-		}
-	}
 }
 
