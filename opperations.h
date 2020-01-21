@@ -46,7 +46,7 @@ typedef struct query{
 
 void print_inb(inbetween* inb);
 void equals(inbetween* inb,int place);
-void join_rels(inbetween* inb,int place1,int place2);
+void join_rels(inbetween* inb,int place1,int place2, JobScheduler*);
 void join(relation* result, relation* rel1, relation* rel2) ;
 
 Result* query_comp_v2(TableStorage* store,query* qu,JobScheduler* jobScheduler);
